@@ -9,11 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/react-editor": "^3.2.3",
     "cheerio": "^1.1.2",
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
+    "express": "^5.1.0",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
+    "morgan": "^1.10.1",
     "next": "15.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",

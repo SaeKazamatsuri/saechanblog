@@ -20,7 +20,7 @@ export default function AboutPage() {
             {/* コンテンツ本文 */}
             <section className="text-lg text-gray-800 leading-relaxed mb-16">
                 <p>
-                    当サイトは風祭小枝の活動を記録するブログとなっております。
+                    当サイトは風祭小枝の活動を記録するブログとなっております。不定期に更新しますので、気長にお待ちください。
                 </p>
             </section>
 
