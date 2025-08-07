@@ -10,21 +10,16 @@ import remarkParse from 'remark-parse'
 import { visit } from 'unist-util-visit'
 import type { Root, Heading as MdHeading, PhrasingContent } from 'mdast'
 
-/* ── 型定義 ───────────────────────── */
 type RouteParams = { category: string; slug: string }
 type Props = { params: Promise<RouteParams> }
 
-/* ──────────────────────────────── */
 export default async function Page({ params }: Props) {
-	/* 1. URL パラメータ */
 	const { category: categorySlug, slug } = await params
 
-	/* 2. Markdown 取得 */
 	const postData = await getPostData(categorySlug, slug)
 
 	const tags: string[] = Array.isArray(postData.tags) ? postData.tags : [];
 
-	/* 3. 見出し抽出 (h2/h3) */
 	const slugger = new Slugger()
 	const headings: Heading[] = []
 
@@ -40,14 +35,12 @@ export default async function Page({ params }: Props) {
 		headings.push({ id, text, level: node.depth as 2 | 3 })
 	})
 
-	/* 4. パンくず */
 	const breadcrumbItems = [
 		{ name: 'ホーム', path: '/' },
 		{ name: postData.category, path: `/post/${categorySlug}` },
 		{ name: postData.title },
 	]
 
-	/* 5. 相対リンク・画像パス補正 */
 	const urlTransform = (uri: string) => {
 		if (uri.startsWith('http')) return uri
 
@@ -62,14 +55,11 @@ export default async function Page({ params }: Props) {
 			: `/post/${categorySlug}/${relativePath}`
 	}
 
-	/* 6. 描画 */
 	return (
 		<article className="flex flex-col lg:flex-row gap-8 min-h-screen">
-			{/* Main */}
 			<div className="flex-1 bg-white p-6 sm:p-10 md:p-12 rounded-xl shadow-sm">
 				<Breadcrumbs items={breadcrumbItems} />
 
-				{/* タイトル＋日付＋タグ */}
 				<div className="mt-6 mb-10 border-b border-blue-200 pb-6">
 					<h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-900 tracking-tight">
 						{postData.title}
@@ -77,7 +67,6 @@ export default async function Page({ params }: Props) {
 
 					<p className="mt-3 text-base text-blue-600">{postData.date}</p>
 
-					{/* ★ ここを tags 変数に変更 */}
 					{tags.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2">
 							{tags.map((tag) => (
@@ -92,8 +81,6 @@ export default async function Page({ params }: Props) {
 					)}
 				</div>
 
-
-				{/* 本文 (Markdown) */}
 				<div className="prose prose-blue sm:prose-base lg:prose-lg max-w-none">
 					<ReactMarkdown
 						rehypePlugins={[rehypeHighlight, rehypeSlug]}
@@ -153,7 +140,6 @@ export default async function Page({ params }: Props) {
 				</div>
 			</div>
 
-			{/* 目次 */}
 			<aside className="hidden lg:block w-64 flex-shrink-0">
 				<div className="sticky top-6 z-10">
 					<TableOfContents headings={headings} />
@@ -163,7 +149,6 @@ export default async function Page({ params }: Props) {
 	)
 }
 
-/* ── Metadata ───────────────────── */
 export async function generateMetadata({ params }: Props) {
 	const { category: categorySlug, slug } = await params
 	const { title, description, cover, tags } = await getPostData(
@@ -171,7 +156,6 @@ export async function generateMetadata({ params }: Props) {
 		slug,
 	)
 
-	/* cover を OGP 用 URL に解決 */
 	const coverUrl =
 		cover && cover.startsWith('http')
 			? cover
@@ -180,10 +164,10 @@ export async function generateMetadata({ params }: Props) {
 				: undefined
 
 	return {
-		title,                       // <title>
-		description,                 // <meta name="description">
-		keywords: tags,              // <meta name="keywords">
-		openGraph: {                 // OGP
+		title,
+		description,
+		keywords: tags,
+		openGraph: {
 			title,
 			description,
 			images: coverUrl ? [{ url: coverUrl }] : undefined,
@@ -191,7 +175,6 @@ export async function generateMetadata({ params }: Props) {
 	}
 }
 
-/* ── SSG Paths ──────────────────── */
 export async function generateStaticParams() {
 	const posts = getSortedPostsData()
 	return posts.map(({ categorySlug, id }) => ({

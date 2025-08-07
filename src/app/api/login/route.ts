@@ -1,4 +1,4 @@
-// src/app/api/login/route.ts
+
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 			value: 'true',
 			path: '/',
 			maxAge: 60 * 60,
-			httpOnly: false, // middlewareで読みたいならfalseにする
+			httpOnly: false,
 		});
 
 		return NextResponse.json({ success: true }, { status: 200 });

@@ -6,7 +6,7 @@ const RATE_LIMIT = 100
 const WINDOW_MS = 60 * 1000
 
 const blockedPaths = [
-	// 隠しファイルや設定ファイル
+
 	'.env',
 	'.env.local',
 	'.env.production',
@@ -15,27 +15,27 @@ const blockedPaths = [
 	'.htaccess',
 	'.htpasswd',
 
-	// CMS系（WordPressなど）
+
 	'wp-login.php',
 	'wp-admin',
 	'xmlrpc.php',
 
-	// データベースツール
+
 	'phpmyadmin',
 	'adminer.php',
 
-	// サーバー構成ファイルや設定
+
 	'config.php',
 	'configuration.php',
 	'web.config',
 
-	// バックアップファイルや一時ファイル
+
 	'config.php.bak',
 	'config.php.old',
 	'dump.sql',
 	'database.sql',
 
-	// よくあるディレクトリ
+
 	'vendor',
 	'node_modules',
 	'storage',

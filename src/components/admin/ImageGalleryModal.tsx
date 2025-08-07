@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useToast } from '@/components/admin/ToastProvider'; // ★ 追加
+import { useToast } from '@/components/admin/ToastProvider';
 
 type Props = {
-	category: string; // 例: 'hobby'
+	category: string;
 	label?: string;
 };
 
@@ -13,9 +13,9 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 	const [images, setImages] = useState<string[]>([]);
 	const [folder, setFolder] = useState<string>('');
 
-	const pushToast = useToast(); // ★ コンテキストから取得
+	const pushToast = useToast();
 
-	/* 一覧取得 */
+
 	const handleOpen = async () => {
 		setOpen(true);
 		try {
@@ -36,7 +36,7 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 		setFolder('');
 	};
 
-	/* クリック → Markdown 形式でコピーしてトースト表示 */
+
 	const copyToClipboard = async (fileName: string) => {
 		const markdown = `![](/${fileName})`;
 		try {
@@ -49,7 +49,7 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 
 	return (
 		<>
-			{/* トリガーボタン */}
+			{ }
 			<button
 				onClick={handleOpen}
 				className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
@@ -57,7 +57,7 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 				{label}
 			</button>
 
-			{/* モーダル */}
+			{ }
 			{open && (
 				<div
 					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"

@@ -1,4 +1,4 @@
-// src/app/api/save-post/route.ts
+
 import { promises as fs } from 'fs';
 import { existsSync } from 'fs';
 import path from 'path';
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 		const dirName = getCategoryDirName(slug) ?? `[${slug}](${slug})`;
 		const filePath = path.join(process.cwd(), 'public', 'post', dirName, `${filename}.md`);
 
-		// ファイルが存在 & overwrite=false のときは 409 を返す
+
 		if (!overwrite && existsSync(filePath)) {
 			return NextResponse.json({ error: 'File exists' }, { status: 409 });
 		}

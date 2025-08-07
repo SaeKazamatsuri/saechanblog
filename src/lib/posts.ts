@@ -7,38 +7,38 @@ import matter from 'gray-matter'
  * ──────────────────────────────── */
 const postsDirectory = path.join(process.cwd(), 'public/post')
 
-/* ── 型定義 ───────────────────────── */
+
 export type PostData = {
 	id: string
 	title: string
 	date: string
-	/** 表示用（日本語） */
+
 	category: string
-	/** URL 用（英数字） */
+
 	categorySlug: string
-	/** 本文 (個別ページ取得時のみ) */
+
 	content?: string
 
-	/* ★ 追加フィールド (すべて optional) */
+
 	description?: string
 	cover?: string
 	tags?: string[]
 }
 
 export type Category = {
-	/** 表示用（日本語） */
+
 	displayName: string
-	/** URL 用（英数字） */
+
 	slug: string
 }
 
-/* ── 全記事 (フロントマターのみ) を取得・日付順ソート ── */
+
 export function getSortedPostsData(): PostData[] {
 	const dirNames = fs.readdirSync(postsDirectory)
 	let allPosts: PostData[] = []
 
 	dirNames.forEach((dirName) => {
-		// フォルダ名: [日本語](slug)
+
 		const m = dirName.match(/^\[(.+?)\]\((.+?)\)$/)
 		if (!m) return
 		const [, displayName, slug] = m
@@ -54,7 +54,7 @@ export function getSortedPostsData(): PostData[] {
 				const fullPath = path.join(categoryDir, fileName)
 				const { data } = matter(fs.readFileSync(fullPath, 'utf8'))
 
-				/* data から必要フィールドだけ安全に取り出す */
+
 				const {
 					title,
 					date,
@@ -84,16 +84,16 @@ export function getSortedPostsData(): PostData[] {
 		allPosts = allPosts.concat(posts)
 	})
 
-	/* 日付降順 (新しい順) */
+
 	return allPosts.sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
-/* ── 個別記事 (本文込み) を取得 ── */
+
 export async function getPostData(
 	categorySlug: string,
 	id: string,
 ): Promise<PostData> {
-	/* slug から対応ディレクトリを探す */
+
 	const dirName = fs
 		.readdirSync(postsDirectory)
 		.find((d) => d.match(/^\[.+?\]\((.+?)\)$/)?.[1] === categorySlug)
@@ -103,7 +103,7 @@ export async function getPostData(
 	const fullPath = path.join(postsDirectory, dirName, `${id}.md`)
 	const { data, content } = matter(fs.readFileSync(fullPath, 'utf8'))
 
-	/* 日本語カテゴリ名はフォルダ名から再取得 */
+
 	const displayName = dirName.match(/^\[(.+?)\]\(/)![1]
 
 	const {
@@ -133,7 +133,7 @@ export async function getPostData(
 	}
 }
 
-/* ── ユーティリティ ──────────────────── */
+
 
 /**
  * カテゴリスラッグから実際のディレクトリ名を取得
@@ -158,7 +158,7 @@ export function resolveImagePath(categorySlug: string, imageName: string): strin
 	return `/post/${categorySlug}/${imageName}`
 }
 
-/** public/post 配下のフォルダからカテゴリ情報を取得 */
+
 export function getCategories(): Category[] {
 	return fs
 		.readdirSync(postsDirectory)

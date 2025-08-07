@@ -1,4 +1,4 @@
-// src/layouts/MainLayout.tsx
+
 import Header from './Header';
 import Footer from './Footer';
 
