@@ -41,8 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # 追加
-GEMINI.md
-error.area
 public/post
 .vscode
-log
+/log

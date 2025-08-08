@@ -11,6 +11,7 @@
   "dependencies": {
     "@toast-ui/editor": "^3.2.2",
     "@toast-ui/react-editor": "^3.2.3",
+    "argon2": "^0.43.1",
     "cheerio": "^1.1.2",
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
@@ -21,6 +22,7 @@
     "next": "15.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-easy-crop": "^5.5.0",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
     "rehype-slug": "^6.0.0",
