@@ -15,7 +15,6 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 
 	const pushToast = useToast();
 
-
 	const handleOpen = async () => {
 		setOpen(true);
 		try {
@@ -68,7 +67,7 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="mb-4 flex justify-between">
-							<h2 className="text-xl font-bold">{folder || category} の画像</h2>
+							<h2 className="text-xl font-bold">{(/\[(.*?)\]\(.*?\)/.exec(folder) || [])[1]}カテゴリの画像</h2>
 							<button onClick={handleClose} className="text-gray-500 hover:text-gray-800">
 								×
 							</button>
@@ -85,7 +84,7 @@ export default function ImageGalleryModal({ category, label = '画像を見る' 
 										className="focus:outline-none"
 									>
 										<img
-											src={`/post/${encodeURIComponent(folder)}/${encodeURIComponent(name)}`}
+											src={`/api/images/${encodeURIComponent((folder.match(/\(([^)]+)\)/)?.[1] ?? ""))}/${encodeURIComponent(name)}`}
 											alt={name}
 											className="h-40 w-full object-cover"
 										/>

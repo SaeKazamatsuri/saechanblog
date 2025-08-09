@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-	title: '運営者について',
+	title: 'サイト運営者について',
 	description: 'このサイトの運営者プロフィールと運営方針',
 };
 

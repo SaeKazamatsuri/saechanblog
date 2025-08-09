@@ -1,6 +1,12 @@
 import Link from 'next/link'
 import { staticRoutes } from '@/lib/staticRoutes'
 import { getSortedPostsData } from '@/lib/posts'
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+	title: 'サイトマップ',
+	description: 'ショートランドのこかげ(sae-chan.net)のサイトマップ',
+};
 
 export default async function SitemapPage() {
 

@@ -5,6 +5,7 @@ import type { Category } from '@/lib/posts'
 import { fmtTimestamp, getJst } from './time'
 import ImageGalleryModal from '@/components/admin/ImageGalleryModal'
 import { useToast } from '@/components/admin/ToastProvider'
+import PasteSelectModal from '@/components/admin/PasteSelectModal'
 
 // 機能: 本文用画像アップロード/コピー
 type Props = {
@@ -13,19 +14,23 @@ type Props = {
 }
 
 export default function ImageTab({ categories, category }: Props) {
+	// 変数: 選択中ファイル
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
+	// 変数: アップロード済みURL
 	const [uploadedUrl, setUploadedUrl] = useState('')
+	// 変数: アップロード中フラグ
 	const [uploading, setUploading] = useState(false)
+	// 変数: 選択モーダル表示
+	const [selectOpen, setSelectOpen] = useState(false)
 	const pushToast = useToast()
 
-	// 機能: 画像アップロード
+	// 関数: 画像アップロード
 	const uploadImage = async () => {
 		if (!selectedFile) return
 		const ext = '.' + (selectedFile.name.split('.').pop() || 'png').toLowerCase()
 		const timestamp = fmtTimestamp(getJst())
 		const saveName = `${timestamp}${ext}`
-		const display =
-			categories.find(c => c.slug === category)?.displayName || category
+		const display = categories.find(c => c.slug === category)?.displayName || category
 		const dirName = `[${display}](${category})`
 
 		const form = new FormData()
@@ -47,7 +52,7 @@ export default function ImageTab({ categories, category }: Props) {
 		pushToast('画像をアップロードしたよ')
 	}
 
-	// 機能: マークダウン埋め込みコピー
+	// 関数: マークダウン埋め込みコピー
 	const copyMarkdown = () => {
 		if (!uploadedUrl) return
 		const file = uploadedUrl.split('/').pop()!
@@ -55,20 +60,22 @@ export default function ImageTab({ categories, category }: Props) {
 		pushToast('コピーしました')
 	}
 
+	// 関数: モーダルからの選択受け取り
+	const handleSelectFromModal = (file: File) => {
+		setSelectedFile(file)
+		setSelectOpen(false)
+		pushToast('画像を取り込んだよ')
+	}
+
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-4">
-				<label className="relative inline-block">
-					<span className="inline-block px-3 py-2 bg-gray-100 border border-gray-300 rounded-sm cursor-pointer hover:bg-gray-200">
-						画像を選択
-					</span>
-					<input
-						type="file"
-						accept="image/*"
-						onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-						className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
-					/>
-				</label>
+				<button
+					onClick={() => setSelectOpen(true)}
+					className="inline-block px-3 py-2 bg-gray-100 border border-gray-300 rounded-sm hover:bg-gray-200"
+				>
+					画像を選択
+				</button>
 
 				<button
 					onClick={uploadImage}
@@ -77,6 +84,12 @@ export default function ImageTab({ categories, category }: Props) {
 				>
 					{uploading ? 'アップロード中…' : 'アップロード'}
 				</button>
+
+				{selectedFile && !uploadedUrl && (
+					<div className="h-[40px] flex items-center gap-2 bg-gray-50 border border-gray-300 px-3 py-2 rounded-sm">
+						<span className="text-sm text-gray-700">選択中: {selectedFile.name}</span>
+					</div>
+				)}
 
 				{uploadedUrl && (
 					<div className="h-[40px] flex items-center gap-2 bg-gray-50 border border-gray-300 px-3 py-2 rounded-sm">
@@ -94,6 +107,12 @@ export default function ImageTab({ categories, category }: Props) {
 					<ImageGalleryModal category={category} />
 				</div>
 			</div>
+
+			<PasteSelectModal
+				open={selectOpen}
+				onClose={() => setSelectOpen(false)}
+				onSelect={handleSelectFromModal}
+			/>
 		</div>
 	)
 }
