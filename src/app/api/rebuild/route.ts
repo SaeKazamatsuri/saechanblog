@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
 
     // 実行する手順
     const steps: [string, string][] = [
-        ['cd', 'cd /home/koeda_pi/Desktop/saechanblog'],
         ['pull', 'git pull'],
         ['install', 'npm install --legacy-peer-deps'],
         ['build', 'npm run build'],
