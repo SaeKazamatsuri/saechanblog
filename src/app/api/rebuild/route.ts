@@ -19,7 +19,7 @@ function runStep(name: string, cmd: string): Promise<boolean> {
     return new Promise((resolve) => {
         exec(cmd, (error, stdout, stderr) => {
             if (error) {
-                writeLog(`${name}: NG {${error.message}}`)
+                writeLog(`${name}: NG \n{${error.message}}`)
                 return resolve(false)
             }
             if (stderr) {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const steps: [string, string][] = [
         ['cd', 'cd /home/koeda_pi/Desktop/saechanblog'],
         ['pull', 'git pull'],
-        ['install', 'npm install'],
+        ['install', 'npm install --legacy-peer-deps'],
         ['build', 'npm run build'],
         ['restart', 'pm2 restart saechanblog'],
     ]
