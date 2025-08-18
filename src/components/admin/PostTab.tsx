@@ -42,9 +42,7 @@ export default function PostTab({
             } else {
                 pushToast('サーバ更新に失敗しました')
             }
-        } catch (err) {
-            console.error(err)
-
+        } catch {
             pushToast('サーバ更新エラー')
         }
     }
