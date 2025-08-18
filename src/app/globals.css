@@ -3,118 +3,112 @@
 @import 'tailwindcss';
 
 html {
-	scrollbar-gutter: stable;
+    scrollbar-gutter: stable;
 }
 
 body {
-	font-family: "BIZ UDPGothic", sans-serif !important;
+    font-family: 'BIZ UDPGothic', sans-serif !important;
 }
 
 .toastui-editor-defaultUI * {
-	font-family: "BIZ UDPGothic", sans-serif !important;
+    font-family: 'BIZ UDPGothic', sans-serif !important;
 }
 
 .toastui-editor-contents h2 {
-	font-size: 1.5rem;
+    font-size: 1.5rem;
 
-	font-weight: 700;
+    font-weight: 700;
 
-	margin-top: 3rem;
+    margin-top: 3rem;
 
-	margin-bottom: 1rem;
+    margin-bottom: 1rem;
 
-	padding-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
 
-	border-bottom: 2px solid rgba(191, 219, 254, 0.8);
+    border-bottom: 2px solid rgba(191, 219, 254, 0.8);
 
-	color: #1e40af;
-
+    color: #1e40af;
 }
 
 .toastui-editor-contents h3 {
-	scroll-margin-top: 6rem;
-	font-size: 1.25rem;
+    scroll-margin-top: 6rem;
+    font-size: 1.25rem;
 
-	font-weight: 600;
+    font-weight: 600;
 
-	margin-top: 2.5rem;
-	margin-bottom: 0.75rem;
-	color: #1e40af;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: #1e40af;
 }
 
 .toastui-editor-contents p {
-	font-size: 1.125rem;
+    font-size: 1.125rem;
 
-	line-height: 1.75rem;
+    line-height: 1.75rem;
 
-	color: #1e293b;
-
+    color: #1e293b;
 }
 
 .toastui-editor-contents a {
-	color: #2563eb;
+    color: #2563eb;
 
-	text-decoration: underline;
-	font-weight: 500;
-	transition: color 0.2s ease-in-out;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s ease-in-out;
 }
 
 .toastui-editor-contents a:hover {
-	color: #1e40af;
-
+    color: #1e40af;
 }
 
 .toastui-editor-contents ul {
-	list-style-type: disc;
-	padding-left: 1.5rem;
-	margin-top: 1rem;
-	margin-bottom: 1rem;
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .toastui-editor-contents ol {
-	list-style-type: decimal;
-	padding-left: 1.5rem;
-	margin-top: 1rem;
-	margin-bottom: 1rem;
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .toastui-editor-contents img {
-	max-height: 80vh;
-	margin-left: auto;
-	margin-right: auto;
-	display: block;
-	border-radius: 0.5rem;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	border: 1px solid #dbeafe;
+    max-height: 80vh;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #dbeafe;
 }
 
 .toastui-editor-contents blockquote {
-	border-left: 4px solid #60a5fa;
+    border-left: 4px solid #60a5fa;
 
-	background-color: rgba(239, 246, 255, 0.8);
+    background-color: rgba(239, 246, 255, 0.8);
 
-	padding: 1rem;
-	margin: 1.5rem 0;
-	font-style: italic;
-	color: #334155;
-
+    padding: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #334155;
 }
 
 .toastui-editor-contents pre {
-	padding: 0.5rem;
-	margin: 1.25rem 0;
-	border-radius: 0.5rem;
-	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-	font-size: 0.875rem;
+    padding: 0.5rem;
+    margin: 1.25rem 0;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: 0.875rem;
 
-	border: 2px solid #e5e7eb;
+    border: 2px solid #e5e7eb;
 
-	overflow-x: auto;
+    overflow-x: auto;
 }
 
 .toastui-editor-contents hr {
-	margin: 2.5rem 0;
-	border-top: 2px solid #dbeafe;
+    margin: 2.5rem 0;
+    border-top: 2px solid #dbeafe;
 }
-
-
