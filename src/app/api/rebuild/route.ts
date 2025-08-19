@@ -3,12 +3,11 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-// ログ書き出し用のロガーを生成する
-// // 1リクエスト=1ファイル。JST時刻でファイル名を付ける
+// // 1リクエスト=1ファイルのロガーを作る（build フォルダに日時付き .log）
 function createLogger() {
-    const logDir = path.join(process.cwd(), 'build')
+    const logDir = path.join(process.cwd(), 'build') // // フォルダを build に変更
     if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true }) // // 初回デプロイでも失敗しないようにする
+        fs.mkdirSync(logDir, { recursive: true }) // // 初回でも失敗しないようにする
     }
 
     const now = new Date()
@@ -35,12 +34,12 @@ function createLogger() {
 
     const logFile = path.join(process.cwd(), 'build', `${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.log`)
     const headerTs = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} JST`
-    fs.writeFileSync(logFile, `${headerTs} update start\n\n`)
+    fs.writeFileSync(logFile, `${headerTs} update start\n\n`) // // ヘッダー行を書いて新規ファイルを確定
     const write = (block: string) => fs.appendFileSync(logFile, block.endsWith('\n') ? block : block + '\n')
     return { write, logFile }
 }
 
-// JSTの時刻文字列を生成
+// // JSTの時刻を揃えた書式で返す（行頭のタイムスタンプを統一）
 function formatJstTimestamp() {
     const now = new Date()
     const parts = new Intl.DateTimeFormat('ja-JP', {
@@ -60,7 +59,7 @@ function formatJstTimestamp() {
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} JST`
 }
 
-// 1ステップ実行（spawn error を含む全ての終了経路でブロックを書き出す）
+// // 1ステップ実行（stdout/stderr をバッファして「ブロック」で書く）
 function runStep(
     name: string,
     command: string,
@@ -71,15 +70,14 @@ function runStep(
     return new Promise((resolve) => {
         const ts = formatJstTimestamp()
 
-        // 絶対パスが存在しない/実行不可の早期検出
         if (path.isAbsolute(command)) {
-            const exists = fs.existsSync(command)
+            const exists = fs.existsSync(command) // // 絶対パスの場合は存在チェックで即時失敗にする
             if (!exists) {
                 let block = `${ts} ${name}:NG\n\n`
                 block += `\tspawn error:\n`
                 block += `\t\tCommand not found: ${command}\n\n`
                 block += `\t対処:\n`
-                block += `\t\tpm2 のパスを見直すか 'pm2'（PATH 解決）に変更してください。\n`
+                block += `\t\tパスを見直すか PATH 解決のコマンド名で実行してください。\n`
                 write(block)
                 return resolve(false)
             }
@@ -97,7 +95,6 @@ function runStep(
             stderrBuf += data.toString()
         })
 
-        // 起動時点のエラー（ENOENT, EACCES など）を確実に拾う
         proc.on('error', (err) => {
             let block = `${formatJstTimestamp()} ${name}:NG\n\n`
             block += `\tspawn error:\n`
@@ -139,8 +136,38 @@ function runStep(
     })
 }
 
+// // pm2 restart を「1秒遅延 + 非同期デタッチ」で投げる（自分自身の再起動で親プロセスが途中終了するのを避ける）
+function runRestartDetached(
+    name: string,
+    pm2Cmd: string,
+    appName: string,
+    cwd: string,
+    write: (block: string) => void
+): boolean {
+    const ts = formatJstTimestamp()
+    const cmd = `sleep 1 && ${pm2Cmd} restart ${appName}` // // 1秒遅延で再起動を実施
+    const shellLine = `nohup bash -lc "${cmd}" >/dev/null 2>&1 &` // // nohup + デタッチでバックグラウンド実行
+
+    try {
+        spawn('bash', ['-lc', shellLine], { cwd, detached: true, stdio: 'ignore' }) // // 完全デタッチ
+        let block = `${ts} ${name}:TRIGGERED (detached)\n\n`
+        block += `\tcommand:\n`
+        block += `\t\t${shellLine}\n\n`
+        block += `\t説明:\n`
+        block += `\t\tこの API を処理しているプロセスが再起動で落ちても、ログとレスポンスを先に確定させるための措置です。\n`
+        write(block)
+        return true
+    } catch (err: any) {
+        let block = `${ts} ${name}:NG\n\n`
+        block += `\tspawn error:\n`
+        block += `\t\t${err?.name || 'Error'}: ${err?.message || String(err)}\n\n`
+        write(block)
+        return false
+    }
+}
+
 export async function POST(req: NextRequest) {
-    // 簡易認証
+    // // 簡易認証（Cookie は HTTPS/HttpOnly/SameSite を併用すること）
     const cookie = req.cookies.get('admin_auth')
     if (!cookie || cookie.value !== 'true') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -148,13 +175,10 @@ export async function POST(req: NextRequest) {
 
     const { write, logFile } = createLogger()
 
-    // 環境に合わせてここを選んでね。まずは PATH 解決の 'pm2' を推奨
     const steps: [string, string, string[]][] = [
-        ['pull', 'git', ['pull']],
-        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
-        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
-        // ['restart', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2', ['restart', 'saechanblog']], // // 絶対パスを使うならこちら（存在確認は runStep が行う）
-        ['restart', 'pm2', ['restart', 'saechanblog']], // // まずは PATH 解決で試す。起動エラーはログ化される
+        ['pull', 'git', ['pull']], // // 既存ワーキングツリーを更新
+        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']], // // 依存の解決
+        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']], // // 本番ビルド
     ]
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
@@ -164,8 +188,14 @@ export async function POST(req: NextRequest) {
         success = await runStep(name, cmd, args, cwd, write)
     }
 
+    if (success) {
+        // // pm2 への再起動指示をデタッチで発火する（自分自身の再起動で親が落ちてもログは残る）
+        const pm2Cmd = 'pm2' // // PATH に無いなら絶対パスに置き換えてOK（runStepの存在チェックパスはここでは使わない）
+        success = runRestartDetached('restart', pm2Cmd, 'saechanblog', cwd, write)
+    }
+
     return NextResponse.json({
-        message: 'Update finished (see log).',
+        message: success ? 'Update finished (restart scheduled).' : 'Update finished with errors (see log).',
         log: path.relative(process.cwd(), logFile),
     })
 }
