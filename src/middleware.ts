@@ -6,6 +6,7 @@ const RATE_LIMIT = 100
 const WINDOW_MS = 60 * 1000
 
 const blockedPaths = [
+    // 環境・設定ファイル
     '.env',
     '.env.local',
     '.env.production',
@@ -14,28 +15,45 @@ const blockedPaths = [
     '.htaccess',
     '.htpasswd',
 
-    'wp-login.php',
+    // CMS / 管理ディレクトリ
     'wp-admin',
-    'xmlrpc.php',
+    'xmlrpc',
 
-    'phpmyadmin',
-    'adminer.php',
-
-    'config.php',
-    'configuration.php',
+    // データベースやバックアップ
     'web.config',
-
-    'config.php.bak',
-    'config.php.old',
     'dump.sql',
     'database.sql',
 
+    // ディレクトリ
     'vendor',
     'node_modules',
     'storage',
     'logs',
     'backup',
     'tmp',
+
+    // 隠しディレクトリ利用
+    '/.trash7309/',
+    '/.well-known/about/',
+    '/.well-known/acme-challenge/',
+
+    // クラウド認証情報
+    '/.AWS_/credentials',
+    '/.aws/credentials',
+    '/.aws/config',
+    '/.aws/s3/keys',
+    '/.aws/s3/secrets',
+    '/.aws/s3/tokens',
+    '/.aws_lambda/config.json',
+    '/.aws_lambda/secrets.json',
+    '/.cloudfront/keys.json',
+    '/.cloudfront/secrets.json',
+
+    // ソースコードや設定漏洩
+    'wp-config',
+    'service/email_service.py',
+    'server/config/database.js',
+    'scripts/nodemailer.js',
 ]
 
 export function middleware(req: NextRequest) {
@@ -43,6 +61,12 @@ export function middleware(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
     const url = req.nextUrl.pathname
 
+    // .php を完全拒否（にいさまのサイトでは不要だから即403）
+    if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
+        return new NextResponse('Forbidden: PHP access blocked.', { status: 403 })
+    }
+
+    // 既知の不正アクセスパターンをブロック
     if (blockedPaths.some((blocked) => url.includes(blocked))) {
         return new NextResponse('Forbidden: Suspicious access detected.', { status: 403 })
     }

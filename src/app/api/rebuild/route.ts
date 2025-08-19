@@ -207,16 +207,11 @@ async function runRestart(
     return okRestart && okLs
 }
 
-export async function POST(req: NextRequest) {
-    const cookie = req.cookies.get('admin_auth')
-    if (!cookie || cookie.value !== 'true') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { write, logFile } = createLogger()
-
+async function runUpdateProcess(write: (block: string) => void, logFile: string) {
     const steps: [string, string, string[]][] = [
-        ['pull', 'git', ['pull']], // Git の pull は PATH 解決で実行
-        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']], // nvm の npm を明示
-        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']], // ビルドは同一バージョンの npm で実施
+        ['pull', 'git', ['pull']],
+        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
+        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
     ]
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
@@ -232,8 +227,25 @@ export async function POST(req: NextRequest) {
         else success = false
     }
 
+    fs.appendFileSync(logFile, `\n処理終了: ${success ? 'OK' : 'NG'}\n`)
+}
+
+export async function POST(req: NextRequest) {
+    const cookie = req.cookies.get('admin_auth')
+    if (!cookie || cookie.value !== 'true') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { write, logFile } = createLogger()
+
+    // バックグラウンドで処理を実行
+    runUpdateProcess(write, logFile).catch((err) => {
+        write(`\nバックグラウンド処理エラー: ${err.message}\n`)
+    })
+
+    // 即レスポンスを返す
     return NextResponse.json({
-        message: success ? 'Update finished (restart completed).' : 'Update finished with errors (see log).',
+        message: 'Update process started. (処理はバックグラウンドで進行中)',
         log: path.relative(process.cwd(), logFile),
     })
 }
