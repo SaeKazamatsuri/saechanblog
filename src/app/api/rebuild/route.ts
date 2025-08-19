@@ -6,7 +6,7 @@ import path from 'path'
 
 // ビルド用ログファイルを JST の日時で作成し、追記関数を返す
 function createLogger() {
-    const logDir = path.join(process.cwd(), 'build')
+    const logDir = path.join(process.cwd(), 'log/build')
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
 
     const now = new Date()
