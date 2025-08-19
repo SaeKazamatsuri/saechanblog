@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     // Twitterカードの既定
     twitter: {
         card: 'summary_large_image', // 画像大きめカード
-        // creator: "@your_twitter", // 任意で設定
+        creator: "@SaeKazamatsuri",
         images: ['/og-default.png'], // 既定Twitter画像
     },
 }

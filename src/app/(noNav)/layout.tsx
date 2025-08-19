@@ -1,5 +1,13 @@
 import Link from 'next/link'
 import { ToastProvider } from '@/components/admin/ToastProvider'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    robots: {
+        index: false,
+        follow: false,
+    },
+}
 
 export default function NoNavLayout({ children }: { children: React.ReactNode }) {
     return (

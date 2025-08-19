@@ -113,7 +113,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
                     <ul className="absolute left-0 top-full hidden min-w-max bg-gray-800 shadow-lg z-20 group-hover:block hover:block space-y-1">
                         {[
                             { label: 'サイト運営について', href: '/charge-of-this-site' },
-                            { label: 'サイトマップ', href: '/sitemap' },
+                            { label: 'サイトマップ', href: '/site-map' },
                             { label: 'プライバシーポリシー', href: '/privacy-policy' },
                         ].map((link) => (
                             <li key={link.label}>
@@ -213,7 +213,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
                                 <div className="pl-3">
                                     {[
                                         { label: 'サイト運営について', href: '/charge-of-this-site' },
-                                        { label: 'サイトマップ', href: '/sitemap' },
+                                        { label: 'サイトマップ', href: '/site-map' },
                                         { label: 'プライバシーポリシー', href: '/privacy-policy' },
                                     ].map((link) => (
                                         <Link
