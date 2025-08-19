@@ -1,9 +1,10 @@
+// app/api/update/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn, spawnSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-// // build フォルダに日時付き .log を作る
+// ビルド用ログファイルを JST の日時で作成し、追記関数を返す
 function createLogger() {
     const logDir = path.join(process.cwd(), 'build')
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
@@ -35,7 +36,7 @@ function createLogger() {
     return { write, logFile }
 }
 
-// // JSTの一行タイムスタンプ
+// JST の一行タイムスタンプを返す
 function formatJstTimestamp() {
     const now = new Date()
     const parts = new Intl.DateTimeFormat('ja-JP', {
@@ -55,20 +56,21 @@ function formatJstTimestamp() {
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} JST`
 }
 
-// // 1ステップ実行（終了時にブロックで追記）
-function runStep(
+// 1 ステップ実行を同期的に待つ。envExtra で PATH や色設定を上書きできる
+async function runStep(
     name: string,
     command: string,
     args: string[],
     cwd: string,
-    write: (b: string) => void
+    write: (b: string) => void,
+    envExtra?: NodeJS.ProcessEnv
 ): Promise<boolean> {
     return new Promise((resolve) => {
         const ts = formatJstTimestamp()
 
         if (path.isAbsolute(command)) {
             try {
-                fs.accessSync(command, fs.constants.X_OK) // // 存在＆実行権限
+                fs.accessSync(command, fs.constants.X_OK) // 実行可能か事前検証することで失敗時の原因を明確化
             } catch {
                 let block = `${ts} ${name}:NG\n\n`
                 block += `\tspawn error:\n`
@@ -80,7 +82,8 @@ function runStep(
             }
         }
 
-        const proc = spawn(command, args, { cwd, shell: true })
+        const mergedEnv = { ...process.env, ...envExtra }
+        const proc = spawn(command, args, { cwd, shell: true, env: mergedEnv })
         let stdoutBuf = ''
         let stderrBuf = ''
 
@@ -129,7 +132,7 @@ function runStep(
     })
 }
 
-// // pm2 の絶対パスを返す。見つからなければ null
+// pm2 の絶対パスを返す。見つからなければ null を返し、ログに状況を残す
 function resolvePm2Absolute(write: (b: string) => void): string | null {
     const candidates = [
         '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2',
@@ -145,7 +148,6 @@ function resolvePm2Absolute(write: (b: string) => void): string | null {
             return p
         } catch {}
     }
-    // // 予備: PATH から探してみる（ログ用）
     try {
         const r = spawnSync('bash', ['-lc', 'command -v pm2 || true'], { encoding: 'utf8' })
         const found = r.stdout.trim()
@@ -162,19 +164,30 @@ function resolvePm2Absolute(write: (b: string) => void): string | null {
     return null
 }
 
-// pm2 restart を 1秒遅延 + デタッチで発火し、pm2 の出力を専用ログに保存する
-// // 重要: nvm の node を解決するため PATH に bin を追加し、色コードを無効化、--update-env を付与
-function runRestartDetached(
+// pm2 実行用の環境を構築する。nvm の node bin を PATH 先頭に置き、色コードを無効化する
+function buildEnvForPm2(pm2CmdAbs: string): NodeJS.ProcessEnv {
+    const nodeBinDir = path.dirname(pm2CmdAbs)
+    const base = process.env || {}
+    return {
+        ...base,
+        PATH: `${nodeBinDir}:${base.PATH || ''}`,
+        NO_COLOR: '1',
+        FORCE_COLOR: '0',
+    }
+}
+
+// pm2 の再起動を同期的に実行し、出力をすべて logFile に残す
+async function runRestart(
     name: string,
-    pm2CmdAbs: string, // // 例: /home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2
-    appName: string, // // 例: saechanblog
+    pm2CmdAbs: string,
+    appName: string,
     cwd: string,
     write: (block: string) => void
-): boolean {
-    const nodeBinDir = path.dirname(pm2CmdAbs) // // pm2 と同じ bin に node がある想定
+): Promise<boolean> {
+    const nodeBinDir = path.dirname(pm2CmdAbs)
     const nodeAbs = path.join(nodeBinDir, 'node')
     try {
-        fs.accessSync(nodeAbs, fs.constants.X_OK) // // node の存在と実行権限を確認
+        fs.accessSync(nodeAbs, fs.constants.X_OK) // pm2 と同じ bin に node がある前提を検証
     } catch {
         let block = `${formatJstTimestamp()} ${name}:NG\n\n`
         block += `\tspawn error:\n`
@@ -185,64 +198,13 @@ function runRestartDetached(
         return false
     }
 
-    // // 出力先ファイルを用意
-    const now = new Date()
-    const parts = new Intl.DateTimeFormat('ja-JP', {
-        timeZone: 'Asia/Tokyo',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    })
-        .formatToParts(now)
-        .reduce<Record<string, string>>((a, p) => {
-            if (p.type !== 'literal') a[p.type] = p.value
-            return a
-        }, {})
-    const buildDir = path.join(process.cwd(), 'build')
-    if (!fs.existsSync(buildDir)) fs.mkdirSync(buildDir, { recursive: true })
-    const restartLog = path.join(
-        buildDir,
-        `pm2-restart_${parts.year}-${parts.month}-${parts.day}_${parts.hour}-${parts.minute}-${parts.second}.log`
-    )
-    fs.writeFileSync(
-        restartLog,
-        `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} JST pm2 restart start\n\n`
-    )
+    const env = buildEnvForPm2(pm2CmdAbs)
 
-    // // 1) PATH に nvm の bin を前置, 2) NO_COLOR/ FORCE_COLOR で色無効, 3) --update-env 付きで再起動
-    // // 4) 数秒後に pm2 ls を同一ログに追記（状態確認を残す）
-    const cmd = [
-        `sleep 1`,
-        `export PATH=${nodeBinDir}:$PATH`,
-        `export NO_COLOR=1`,
-        `export FORCE_COLOR=0`,
-        `${pm2CmdAbs} restart ${appName} --update-env >> '${restartLog}' 2>&1`,
-        `sleep 3`,
-        `export PATH=${nodeBinDir}:$PATH`,
-        `export NO_COLOR=1`,
-        `export FORCE_COLOR=0`,
-        `${pm2CmdAbs} ls >> '${restartLog}' 2>&1`,
-    ].join(' && ')
-    const shellLine = `nohup bash -lc "${cmd}" >/dev/null 2>&1 &`
+    const okRestart = await runStep(`${name}-restart`, pm2CmdAbs, ['restart', appName, '--update-env'], cwd, write, env)
+    if (!okRestart) return false
 
-    try {
-        spawn('bash', ['-lc', shellLine], { cwd, detached: true, stdio: 'ignore' }) // // 完全デタッチ
-        let block = `${formatJstTimestamp()} ${name}:TRIGGERED (detached)\n\n`
-        block += `\tcommand:\n\t\t${shellLine}\n\n`
-        block += `\tPATH prepend:\n\t\t${nodeBinDir}\n\n`
-        block += `\tpm2 output log:\n\t\t${path.relative(process.cwd(), restartLog)}\n\n`
-        block += `\t説明:\n\t\t色コードを無効化し、--update-env を付与。数秒後の pm2 ls も同じログに追記します。\n`
-        write(block)
-        return true
-    } catch (err: any) {
-        let block = `${formatJstTimestamp()} ${name}:NG\n\n`
-        block += `\tspawn error:\n\t\t${err?.name || 'Error'}: ${err?.message || String(err)}\n\n`
-        write(block)
-        return false
-    }
+    const okLs = await runStep(`${name}-ls`, pm2CmdAbs, ['ls'], cwd, write, env)
+    return okRestart && okLs
 }
 
 export async function POST(req: NextRequest) {
@@ -252,9 +214,9 @@ export async function POST(req: NextRequest) {
     const { write, logFile } = createLogger()
 
     const steps: [string, string, string[]][] = [
-        ['pull', 'git', ['pull']],
-        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
-        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
+        ['pull', 'git', ['pull']], // Git の pull は PATH 解決で実行
+        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']], // nvm の npm を明示
+        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']], // ビルドは同一バージョンの npm で実施
     ]
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
@@ -265,13 +227,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (success) {
-        const pm2Cmd = resolvePm2Absolute(write) // // 例: /home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2 を見つけてログに出す
-        if (pm2Cmd) success = runRestartDetached('restart', pm2Cmd, 'saechanblog', cwd, write)
+        const pm2Cmd = resolvePm2Absolute(write)
+        if (pm2Cmd) success = await runRestart('restart', pm2Cmd, 'saechanblog', cwd, write)
         else success = false
     }
 
     return NextResponse.json({
-        message: success ? 'Update finished (restart scheduled).' : 'Update finished with errors (see log).',
+        message: success ? 'Update finished (restart completed).' : 'Update finished with errors (see log).',
         log: path.relative(process.cwd(), logFile),
     })
 }
