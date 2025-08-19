@@ -163,7 +163,7 @@ function resolvePm2Absolute(write: (b: string) => void): string | null {
 }
 
 // pm2 restart を 1秒遅延 + デタッチで発火し、pm2 の出力を専用ログに保存する
-// // 重要: pm2 のある bin ディレクトリを PATH の先頭に追加して、/usr/bin/env node の解決を保証する
+// // 重要: nvm の node を解決するため PATH に bin を追加し、色コードを無効化、--update-env を付与
 function runRestartDetached(
     name: string,
     pm2CmdAbs: string, // // 例: /home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2
@@ -171,24 +171,21 @@ function runRestartDetached(
     cwd: string,
     write: (block: string) => void
 ): boolean {
-    // // pm2 の「隣」に node がある想定なので、bin ディレクトリを特定する
-    const nodeBinDir = path.dirname(pm2CmdAbs) // // 例: .../versions/node/v22.18.0/bin
+    const nodeBinDir = path.dirname(pm2CmdAbs) // // pm2 と同じ bin に node がある想定
     const nodeAbs = path.join(nodeBinDir, 'node')
-
-    // // node の実行可能確認（無ければ NG を即ログ化）
     try {
-        fs.accessSync(nodeAbs, fs.constants.X_OK)
+        fs.accessSync(nodeAbs, fs.constants.X_OK) // // node の存在と実行権限を確認
     } catch {
         let block = `${formatJstTimestamp()} ${name}:NG\n\n`
         block += `\tspawn error:\n`
         block += `\t\tNode binary not found or not executable: ${nodeAbs}\n\n`
         block += `\t対処:\n`
-        block += `\t\tnvm 側の Node が存在するか確認し、pm2 と同じバージョンの bin ディレクトリを使ってください。\n`
+        block += `\t\tnvm の Node を確認し、pm2 と同じバージョンの bin を使ってください。\n`
         write(block)
         return false
     }
 
-    // // pm2 の出力保存先（build/pm2-restart_*.log）
+    // // 出力先ファイルを用意
     const now = new Date()
     const parts = new Intl.DateTimeFormat('ja-JP', {
         timeZone: 'Asia/Tokyo',
@@ -215,28 +212,34 @@ function runRestartDetached(
         `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} JST pm2 restart start\n\n`
     )
 
-    // // ここがポイント: PATH の先頭に nodeBinDir を追加してから pm2 実行
-    // // ダブルクォートの衝突を避けるため、パスはクォート不要な文字のみで構成（空白なし）にしている
-    const cmd = `sleep 1 && export PATH=${nodeBinDir}:$PATH && ${pm2CmdAbs} restart ${appName} >> '${restartLog}' 2>&1`
+    // // 1) PATH に nvm の bin を前置, 2) NO_COLOR/ FORCE_COLOR で色無効, 3) --update-env 付きで再起動
+    // // 4) 数秒後に pm2 ls を同一ログに追記（状態確認を残す）
+    const cmd = [
+        `sleep 1`,
+        `export PATH=${nodeBinDir}:$PATH`,
+        `export NO_COLOR=1`,
+        `export FORCE_COLOR=0`,
+        `${pm2CmdAbs} restart ${appName} --update-env >> '${restartLog}' 2>&1`,
+        `sleep 3`,
+        `export PATH=${nodeBinDir}:$PATH`,
+        `export NO_COLOR=1`,
+        `export FORCE_COLOR=0`,
+        `${pm2CmdAbs} ls >> '${restartLog}' 2>&1`,
+    ].join(' && ')
     const shellLine = `nohup bash -lc "${cmd}" >/dev/null 2>&1 &`
 
     try {
         spawn('bash', ['-lc', shellLine], { cwd, detached: true, stdio: 'ignore' }) // // 完全デタッチ
         let block = `${formatJstTimestamp()} ${name}:TRIGGERED (detached)\n\n`
-        block += `\tcommand:\n`
-        block += `\t\t${shellLine}\n\n`
-        block += `\tPATH prepend:\n`
-        block += `\t\t${nodeBinDir}\n\n`
-        block += `\tpm2 output log:\n`
-        block += `\t\t${path.relative(process.cwd(), restartLog)}\n\n`
-        block += `\t説明:\n`
-        block += `\t\tpm2 は #!/usr/bin/env node で Node を解決するため、PATH に nvm の bin を追加しています。\n`
+        block += `\tcommand:\n\t\t${shellLine}\n\n`
+        block += `\tPATH prepend:\n\t\t${nodeBinDir}\n\n`
+        block += `\tpm2 output log:\n\t\t${path.relative(process.cwd(), restartLog)}\n\n`
+        block += `\t説明:\n\t\t色コードを無効化し、--update-env を付与。数秒後の pm2 ls も同じログに追記します。\n`
         write(block)
         return true
     } catch (err: any) {
         let block = `${formatJstTimestamp()} ${name}:NG\n\n`
-        block += `\tspawn error:\n`
-        block += `\t\t${err?.name || 'Error'}: ${err?.message || String(err)}\n\n`
+        block += `\tspawn error:\n\t\t${err?.name || 'Error'}: ${err?.message || String(err)}\n\n`
         write(block)
         return false
     }
