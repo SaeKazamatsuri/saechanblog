@@ -17,7 +17,7 @@ function writeLog(message: string) {
 // spawnを使ってコマンドを実行する関数
 function runStep(name: string, command: string, args: string[], cwd: string): Promise<boolean> {
     return new Promise((resolve) => {
-        const proc = spawn(command, args, { cwd, shell: false })
+        const proc = spawn(command, args, { cwd, shell: true })
 
         let stderrData = ''
         proc.stdout.on('data', (data) => {
@@ -54,9 +54,9 @@ export async function POST(req: NextRequest) {
     // 実行する手順
     const steps: [string, string, string[]][] = [
         ['pull', 'git', ['pull']],
-        ['install', 'npm', ['install', '--legacy-peer-deps']],
-        ['build', 'npm', ['run', 'build']],
-        ['restart', 'pm2', ['restart', 'saechanblog']],
+        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
+        ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
+        ['restart', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2', ['restart', 'saechanblog']],
     ]
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
