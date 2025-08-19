@@ -17,7 +17,7 @@ function writeLog(message: string) {
 // spawnを使ってコマンドを実行する関数
 function runStep(name: string, command: string, args: string[], cwd: string): Promise<boolean> {
     return new Promise((resolve) => {
-        const proc = spawn(command, args, { cwd, shell: true })
+        const proc = spawn(command, args, { cwd, shell: false })
 
         let stderrData = ''
         proc.stdout.on('data', (data) => {
@@ -29,11 +29,13 @@ function runStep(name: string, command: string, args: string[], cwd: string): Pr
 
         proc.on('close', (code) => {
             if (code !== 0) {
-                writeLog(`${name}: NG \n{${stderrData.trim()}}`)
+                writeLog(`${name}: NG`)
+                writeLog(`${stderrData.trim()}`)
                 return resolve(false)
             }
             if (stderrData) {
-                writeLog(`${name}: OK (with stderr: ${stderrData.trim()})`)
+                writeLog(`${name}: OK`)
+                writeLog(`with stderr: ${stderrData.trim()}`)
             } else {
                 writeLog(`${name}: OK`)
             }
