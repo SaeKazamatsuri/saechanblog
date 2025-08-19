@@ -5,15 +5,18 @@ import path from 'path'
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { ip, url, time } = body
-        const logLine = `[${time}] IP: ${ip} URL: ${url}\n`
+        const { ip, url, time, status } = body
+        const logLine = `[${time}] IP: ${ip} URL: ${url} STATUS: ${status}\n`
 
-        const logDir = path.join(process.cwd(), 'log')
-        const logFile = path.join(logDir, 'access.log')
-
+        // log/access ディレクトリを作成
+        const logDir = path.join(process.cwd(), 'log', 'access')
         if (!fs.existsSync(logDir)) {
-            fs.mkdirSync(logDir)
+            fs.mkdirSync(logDir, { recursive: true })
         }
+
+        // 日付ごとのファイルに分ける
+        const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+        const logFile = path.join(logDir, `${today}.log`)
 
         fs.appendFileSync(logFile, logLine)
 

@@ -56,18 +56,29 @@ const blockedPaths = [
     'scripts/nodemailer.js',
 ]
 
+function logAccess(origin: string, ip: string, url: string, status: number) {
+    const isoTime = new Date().toISOString()
+    fetch(`${origin}/api/log`, {
+        method: 'POST',
+        body: JSON.stringify({ ip, url, time: isoTime, status }),
+        headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {})
+}
+
 export function middleware(req: NextRequest) {
     const now = Date.now()
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
     const url = req.nextUrl.pathname
 
-    // .php を完全拒否（にいさまのサイトでは不要だから即403）
+    // .php 拒否
     if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
+        logAccess(req.nextUrl.origin, ip, url, 403)
         return new NextResponse('Forbidden: PHP access blocked.', { status: 403 })
     }
 
-    // 既知の不正アクセスパターンをブロック
+    // 不正アクセスパターン拒否
     if (blockedPaths.some((blocked) => url.includes(blocked))) {
+        logAccess(req.nextUrl.origin, ip, url, 403)
         return new NextResponse('Forbidden: Suspicious access detected.', { status: 403 })
     }
 
@@ -76,6 +87,7 @@ export function middleware(req: NextRequest) {
         if (now - record.lastTime < WINDOW_MS) {
             record.count++
             if (record.count > RATE_LIMIT) {
+                logAccess(req.nextUrl.origin, ip, url, 429)
                 return new NextResponse('Too many requests (Rate limit exceeded)', { status: 429 })
             }
         } else {
@@ -85,22 +97,19 @@ export function middleware(req: NextRequest) {
         ipAccessMap.set(ip, { count: 1, lastTime: now })
     }
 
-    const isoTime = new Date().toISOString()
-    fetch(`${req.nextUrl.origin}/api/log`, {
-        method: 'POST',
-        body: JSON.stringify({ ip, url, time: isoTime }),
-        headers: { 'Content-Type': 'application/json' },
-    }).catch(() => {})
-
+    // 管理画面保護
     if (url.startsWith('/admin')) {
         const cookie = req.cookies.get('admin_auth')
         if (cookie?.value !== 'true') {
             const redirectUrl = req.nextUrl.clone()
             redirectUrl.pathname = '/'
+            logAccess(req.nextUrl.origin, ip, url, 302)
             return NextResponse.redirect(redirectUrl)
         }
     }
 
+    // 正常アクセス（200）
+    logAccess(req.nextUrl.origin, ip, url, 200)
     return NextResponse.next()
 }
 
