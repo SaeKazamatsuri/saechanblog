@@ -136,7 +136,7 @@ function runStep(
     })
 }
 
-// // pm2 restart を「1秒遅延 + 非同期デタッチ」で投げる（自分自身の再起動で親プロセスが途中終了するのを避ける）
+// pm2 restart を「1秒遅延 + 非同期デタッチ」で投げ、pm2 の出力を専用ログに保存する
 function runRestartDetached(
     name: string,
     pm2Cmd: string,
@@ -144,21 +144,52 @@ function runRestartDetached(
     cwd: string,
     write: (block: string) => void
 ): boolean {
-    const ts = formatJstTimestamp()
-    const cmd = `sleep 1 && ${pm2Cmd} restart ${appName}` // // 1秒遅延で再起動を実施
-    const shellLine = `nohup bash -lc "${cmd}" >/dev/null 2>&1 &` // // nohup + デタッチでバックグラウンド実行
+    // // build/pm2-restart_YYYY-MM-DD_HH-mm-ss.log に pm2 の出力を保存する
+    const now = new Date()
+    const parts = new Intl.DateTimeFormat('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    })
+        .formatToParts(now)
+        .reduce<Record<string, string>>((acc, p) => {
+            if (p.type !== 'literal') acc[p.type] = p.value
+            return acc
+        }, {})
+    const yyyy = parts.year
+    const mm = parts.month
+    const dd = parts.day
+    const hh = parts.hour
+    const mi = parts.minute
+    const ss = parts.second
+
+    const buildDir = path.join(process.cwd(), 'build') // // 念のため存在確認
+    if (!fs.existsSync(buildDir)) fs.mkdirSync(buildDir, { recursive: true })
+
+    const restartLog = path.join(buildDir, `pm2-restart_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.log`)
+    fs.writeFileSync(restartLog, `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} JST pm2 restart start\n\n`) // // ヘッダ
+
+    // // 1秒遅延して pm2 を再起動。pm2 の stdout/stderr は restartLog に追記する
+    const cmd = `sleep 1 && ${pm2Cmd} restart ${appName} >> '${restartLog}' 2>&1`
+    const shellLine = `nohup bash -lc "${cmd}" >/dev/null 2>&1 &`
 
     try {
         spawn('bash', ['-lc', shellLine], { cwd, detached: true, stdio: 'ignore' }) // // 完全デタッチ
-        let block = `${ts} ${name}:TRIGGERED (detached)\n\n`
+        let block = `${formatJstTimestamp()} ${name}:TRIGGERED (detached)\n\n`
         block += `\tcommand:\n`
         block += `\t\t${shellLine}\n\n`
+        block += `\tpm2 output log:\n`
+        block += `\t\t${path.relative(process.cwd(), restartLog)}\n\n`
         block += `\t説明:\n`
-        block += `\t\tこの API を処理しているプロセスが再起動で落ちても、ログとレスポンスを先に確定させるための措置です。\n`
+        block += `\t\t再起動の成否・pm2 側の詳細は上記ログに残るよ。\n`
         write(block)
         return true
     } catch (err: any) {
-        let block = `${ts} ${name}:NG\n\n`
+        let block = `${formatJstTimestamp()} ${name}:NG\n\n`
         block += `\tspawn error:\n`
         block += `\t\t${err?.name || 'Error'}: ${err?.message || String(err)}\n\n`
         write(block)
