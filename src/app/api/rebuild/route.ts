@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     // 実行する手順
     const steps: [string, string, string[]][] = [
         ['pull', 'git', ['pull']],
-        ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
+        //['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
         ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
         ['restart', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/pm2', ['restart', 'saechanblog']],
     ]
