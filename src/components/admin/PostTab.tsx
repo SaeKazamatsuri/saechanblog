@@ -2,8 +2,8 @@
 
 import type { Category } from '@/lib/posts'
 import { useToast } from '@/components/admin/ToastProvider'
+import { buildTime } from '@/lib/buildInfo'
 
-// 機能: 投稿タブ（カテゴリ/タイトル/日付/ファイル名/投稿・下書き保存・サーバ更新）
 type Props = {
     categories: Category[]
     category: string
@@ -33,7 +33,6 @@ export default function PostTab({
 }: Props) {
     const pushToast = useToast()
 
-    // サーバ更新処理
     const onRebuild = async () => {
         try {
             const res = await fetch('/api/rebuild', { method: 'POST' })
@@ -47,9 +46,11 @@ export default function PostTab({
         }
     }
 
+    // ビルド時刻を人間が読みやすい形式に整形
+    const buildDate = new Date(buildTime).toLocaleString()
+
     return (
         <div className="space-y-4">
-            {/* 1段目: カテゴリ / タイトル */}
             <div className="flex flex-wrap items-center gap-4">
                 <select
                     value={category}
@@ -72,7 +73,6 @@ export default function PostTab({
                 />
             </div>
 
-            {/* 2段目: 日付 / ファイル名 + 操作ボタン */}
             <div className="flex flex-wrap items-center gap-4">
                 <input
                     type="date"
@@ -109,6 +109,8 @@ export default function PostTab({
                 >
                     サーバ更新
                 </button>
+
+                <span className="text-gray-600">最終更新: {buildDate}</span>
             </div>
         </div>
     )
