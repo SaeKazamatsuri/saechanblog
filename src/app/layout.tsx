@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import 'highlight.js/styles/github.css'
+import ScrollToTop from '@/components/layout/ScrollToTop'
 
 const geistSans = Geist({
     variable: '--font-geist-sans', // フォント変数
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
     // Twitterカードの既定
     twitter: {
         card: 'summary_large_image', // 画像大きめカード
-        creator: "@SaeKazamatsuri",
+        creator: '@SaeKazamatsuri',
         images: ['/og-default.png'], // 既定Twitter画像
     },
 }
@@ -40,7 +41,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="ja">
-            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+                <ScrollToTop />
+                {children}
+            </body>
         </html>
     )
 }

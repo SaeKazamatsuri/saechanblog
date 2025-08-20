@@ -10,8 +10,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <div className="flex flex-col min-h-screen bg-gray-50">
             <Header />
 
-            <main className="flex-1 pt-2">
-                <div className="container mx-auto p-4">{children}</div>
+            <main className="flex-1">
+                <div>{children}</div>
             </main>
 
             <Footer />

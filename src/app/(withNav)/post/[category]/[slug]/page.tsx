@@ -52,7 +52,7 @@ export default async function Page({ params }: Props) {
     }
 
     return (
-        <article className="flex flex-col lg:flex-row gap-8 min-h-screen">
+        <article className="flex flex-col container mx-auto lg:flex-row gap-8 min-h-screen">
             <div className="flex-1 bg-white p-6 sm:p-10 md:p-12 rounded-xl shadow-sm">
                 <Breadcrumbs items={breadcrumbItems} />
 
