@@ -112,3 +112,36 @@ body {
     margin: 2.5rem 0;
     border-top: 2px solid #dbeafe;
 }
+
+.toastui-editor-contents table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #bfdbfe;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.toastui-editor-contents thead {
+    background-color: #dbeafe;
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+.toastui-editor-contents tbody tr + tr {
+    border-top: 1px solid #bfdbfe;
+}
+
+.toastui-editor-contents tr:hover {
+    background-color: #eff6ff;
+}
+
+.toastui-editor-contents th {
+    border: 1px solid #bfdbfe;
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+.toastui-editor-contents td {
+    border: 1px solid #bfdbfe;
+    padding: 0.5rem 1rem;
+}
