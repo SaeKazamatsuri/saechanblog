@@ -110,7 +110,7 @@ export default async function Page({ params }: Props) {
                             ol: (props) => <ol className="list-decimal pl-6 mt-4 space-y-2" {...props} />,
                             img: (props) => (
                                 <img
-                                    className="h-auto max-h-[80vh] w-auto mx-auto rounded-lg shadow-md border border-blue-100"
+                                    className="h-auto max-h-[80vh] w-auto mx-auto my-5 rounded-lg shadow-md border border-blue-100"
                                     {...props}
                                 />
                             ),
