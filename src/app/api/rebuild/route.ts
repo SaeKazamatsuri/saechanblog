@@ -209,6 +209,7 @@ async function runRestart(
 
 async function runUpdateProcess(write: (block: string) => void, logFile: string) {
     const steps: [string, string, string[]][] = [
+        ['reset', 'git', ['reset', '--hard']],
         ['pull', 'git', ['pull']],
         ['install', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['install', '--legacy-peer-deps']],
         ['build', '/home/koeda_pi/.nvm/versions/node/v22.18.0/bin/npm', ['run', 'build']],
