@@ -9,6 +9,7 @@ import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import { visit } from 'unist-util-visit'
 import type { Root, Heading as MdHeading, PhrasingContent } from 'mdast'
+import remarkGfm from 'remark-gfm'
 
 type RouteParams = { category: string; slug: string }
 type Props = { params: Promise<RouteParams> }
@@ -79,6 +80,7 @@ export default async function Page({ params }: Props) {
 
                 <div className="prose prose-blue sm:prose-base lg:prose-lg max-w-none">
                     <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight, rehypeSlug]}
                         urlTransform={urlTransform}
                         components={{
@@ -125,6 +127,15 @@ export default async function Page({ params }: Props) {
                                 />
                             ),
                             hr: (props) => <hr className="my-10 border-t-2 border-blue-100" {...props} />,
+
+                            table: (props) => (
+                                <table className="w-full border-collapse border border-blue-200 my-6" {...props} />
+                            ),
+                            thead: (props) => <thead className="bg-blue-100 text-blue-900 font-semibold" {...props} />,
+                            tbody: (props) => <tbody className="divide-y divide-blue-200" {...props} />,
+                            tr: (props) => <tr className="hover:bg-blue-50" {...props} />,
+                            th: (props) => <th className="border border-blue-200 px-4 py-2 text-left" {...props} />,
+                            td: (props) => <td className="border border-blue-200 px-4 py-2" {...props} />,
                         }}
                     >
                         {postData.content}

@@ -3,6 +3,7 @@
 import type { Category } from '@/lib/posts'
 import { useToast } from '@/components/admin/ToastProvider'
 import { buildTime } from '@/lib/buildInfo'
+import { useState } from 'react'
 
 type Props = {
     categories: Category[]
@@ -32,8 +33,10 @@ export default function PostTab({
     onSaveDraft,
 }: Props) {
     const pushToast = useToast()
+    const [isRebuilding, setIsRebuilding] = useState(false)
 
     const onRebuild = async () => {
+        setIsRebuilding(true)
         try {
             const res = await fetch('/api/rebuild', { method: 'POST' })
             if (res.ok) {
@@ -46,7 +49,6 @@ export default function PostTab({
         }
     }
 
-    // ビルド時刻を人間が読みやすい形式に整形
     const buildDate = new Date(buildTime).toLocaleString()
 
     return (
@@ -105,7 +107,8 @@ export default function PostTab({
 
                 <button
                     onClick={onRebuild}
-                    className="h-[40px] bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded-sm"
+                    disabled={isRebuilding}
+                    className="h-[40px] bg-gray-600 hover:bg-gray-700 transition text-white px-4 py-2 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     サーバ更新
                 </button>
