@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const ipAccessMap = new Map<string, { count: number; lastTime: number }>()
 
-const RATE_LIMIT = 200
+const RATE_LIMIT = 300
 const WINDOW_MS = 60 * 1000
 
 const blockedPaths = [

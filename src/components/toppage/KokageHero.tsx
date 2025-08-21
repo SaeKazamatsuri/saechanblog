@@ -148,87 +148,8 @@ export default function KokageHero() {
             }
         }, root)
 
-        const container = root.current
-        let clickHandler: ((e: MouseEvent) => void) | null = null
-        let moveHandler: ((e: MouseEvent) => void) | null = null
-
-        if (container) {
-            // 小さい波紋（マウス移動用）
-            const createRippleSmall = (x: number, y: number) => {
-                const ripple = document.createElement('div')
-                ripple.className =
-                    'pointer-events-none absolute rounded-full border border-white/60 bg-white/10 will-change-transform'
-                const size = 20
-                ripple.style.width = `${size}px`
-                ripple.style.height = `${size}px`
-                ripple.style.left = `${x - size / 2}px`
-                ripple.style.top = `${y - size / 2}px`
-                container.appendChild(ripple)
-
-                gsap.fromTo(
-                    ripple,
-                    { scale: 0.2, opacity: 0.8 },
-                    {
-                        scale: 3,
-                        opacity: 0,
-                        duration: 1.0,
-                        ease: 'sine.out',
-                        onComplete: () => ripple.remove(),
-                    }
-                )
-            }
-
-            // 大きい波紋（クリック用・ディティールあり）
-            const createRippleBig = (x: number, y: number) => {
-                const size = 50
-                const maxRadius = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2)
-
-                for (let i = 0; i < 3; i++) {
-                    const ripple = document.createElement('div')
-                    ripple.className =
-                        'pointer-events-none absolute rounded-full border border-white/50 bg-white/5 will-change-transform'
-                    ripple.style.width = `${size}px`
-                    ripple.style.height = `${size}px`
-                    ripple.style.left = `${x - size / 2}px`
-                    ripple.style.top = `${y - size / 2}px`
-                    container.appendChild(ripple)
-
-                    gsap.fromTo(
-                        ripple,
-                        { scale: 0.2, opacity: 0.6 },
-                        {
-                            scale: (maxRadius / size) * (1 + i * 0.1),
-                            opacity: 0,
-                            duration: 1.5 + i * 0.3,
-                            ease: 'sine.out',
-                            delay: i * 0.15,
-                            onComplete: () => ripple.remove(),
-                        }
-                    )
-                }
-            }
-
-            let lastMove = 0
-            moveHandler = (e: MouseEvent) => {
-                const now = Date.now()
-                if (now - lastMove > 100) {
-                    createRippleSmall(e.clientX, e.clientY)
-                    lastMove = now
-                }
-            }
-
-            clickHandler = (e: MouseEvent) => createRippleBig(e.clientX, e.clientY)
-
-            container.addEventListener('click', clickHandler)
-            container.addEventListener('mousemove', moveHandler)
-        }
-
         return () => {
             ctx.revert()
-            if (container && clickHandler && moveHandler) {
-                container.removeEventListener('click', clickHandler)
-                container.removeEventListener('mousemove', moveHandler)
-            }
         }
     }, [])
 
@@ -236,14 +157,14 @@ export default function KokageHero() {
         if (!root.current) return
         const container = root.current
 
-        const createAutoBubble = () => {
+        const createBubble = (size?: number, left?: number) => {
             const bubble = document.createElement('div')
             bubble.className = 'pointer-events-none absolute rounded-full bg-white/70 will-change-transform'
-            const size = 2 + Math.random() * 6
-            const left = Math.random() * container.clientWidth
-            bubble.style.width = `${size}px`
-            bubble.style.height = `${size}px`
-            bubble.style.left = `${left}px`
+            const s = size ?? 2 + Math.random() * 6
+            const l = left ?? Math.random() * container.clientWidth
+            bubble.style.width = `${s}px`
+            bubble.style.height = `${s}px`
+            bubble.style.left = `${l}px`
             bubble.style.bottom = `0px`
             container.appendChild(bubble)
 
@@ -254,56 +175,72 @@ export default function KokageHero() {
                     y: -window.innerHeight,
                     opacity: 0,
                     scale: 1.6,
-                    duration: 3 + Math.random() * 2,
+                    duration: 2 + Math.random() * 1.5,
                     ease: 'sine.out',
                     onComplete: () => bubble.remove(),
                 }
             )
         }
 
-        const interval = setInterval(createAutoBubble, 250)
+        for (let i = 0; i < 50; i++) {
+            const size = 2 + Math.random() * 8
+            const left = Math.random() * container.clientWidth
+            createBubble(size, left)
+        }
+
+        const interval = setInterval(() => createBubble(), 150)
         return () => clearInterval(interval)
     }, [])
 
     return (
         <div
             ref={root}
-            className="relative h-[105vh] w-full overflow-hidden bg-gradient-to-b from-sky-900 via-blue-800 to-sky-700 text-white mb-14"
+            className="relative h-[120vh] w-full overflow-hidden 
+             bg-[linear-gradient(to_bottom,_#0c4a6e_0%,_#1e40af_30%,_#0369a1_100%)] 
+             text-white"
         >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-blue-900/60 via-transparent to-white/5" />
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[10vh] bg-gradient-to-b from-transparent to-white" />
 
-            <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-center">
-                <div className="relative w-[40vh] h-[40vh] rotate-45 overflow-hidden rounded-lg">
+            {/* 背景画像（中央に配置） */}
+            <div className="absolute left-1/2 top-[50vh] -translate-x-1/2 -translate-y-1/2 z-10 w-full px-6 inset-0 flex items-center justify-center">
+                <div className="relative w-[50vw] h-[50vw] md:w-[40vh] md:h-[40vh] lg:w-[60vh] lg:h-[60vh] overflow-hidden">
                     <Image
-                        src="/image/hero.png"
-                        alt="中央の画像"
+                        src="/image/hero.webp"
+                        alt="ショートランドのこかげ"
                         fill
-                        className="object-cover"
+                        className="object-cover select-none pointer-events-none"
                         sizes="40vw"
                         priority
                     />
-                    <div className="absolute inset-0 bg-black/40" />
                 </div>
+            </div>
 
+            {/* テキスト群（必ず50vh位置） */}
+            <div className="absolute left-1/2 top-[50vh] -translate-x-1/2 -translate-y-1/2 z-20 w-full px-6 text-center">
                 <h1 className="select-none font-bold tracking-wide text-5xl sm:text-6xl md:text-7xl lg:text-7xl drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
                     {chars.map((c, i) => (
-                        <span key={`${c}-${i}`} className="char will-change-transform">
+                        <span key={`${c}-${i}`} className="char will-change-transform pointer-events-none">
                             {c === ' ' ? '\u00A0' : c}
                         </span>
                     ))}
                 </h1>
-
-                <div className="underline mt-4 h-1 w-56 rounded-full bg-white/80 sm:w-64 md:w-80 will-change-transform" />
-                <p className="mt-4 max-w-xl text-sm text-blue-100/90 sm:text-base">風祭小枝のブログへようこそ</p>
             </div>
 
+            <div className="absolute left-1/2 top-[60vh] -translate-x-1/2 -translate-y-1/2 z-20 w-full px-6 text-center">
+                <div className="underline mx-auto mt-4 h-1 w-56 rounded-full bg-white/80 sm:w-64 md:w-80 will-change-transform" />
+                <p className="mt-4 max-w-xl mx-auto text-sm text-blue-100/90 sm:text-base select-none pointer-events-none">
+                    風祭小枝のブログへようこそ
+                </p>
+            </div>
+
+            {/* ダイヤモンド装飾 */}
             <div className="diamond pointer-events-none absolute left-10 top-16 h-10 w-10 rotate-45 rounded-md border border-white/40 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute right-12 top-24 h-6 w-6 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute left-1/4 top-1/3 h-8 w-8 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute right-1/4 top-1/2 h-5 w-5 rotate-45 rounded-md border border-white/20 bg-white/5 backdrop-blur-[1px] will-change-transform" />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[48%] overflow-hidden">
+            {/* 波エフェクト */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] h-[48%] overflow-hidden">
                 <div
                     id="wave3"
                     className="wave absolute -left-1/2 bottom-0 h-48 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-600/70 to-sky-400/20 blur-[2px] will-change-transform"
@@ -316,10 +253,26 @@ export default function KokageHero() {
                     id="wave1"
                     className="wave absolute -left-1/2 bottom-20 h-32 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-400/80 to-sky-200/30 will-change-transform"
                 />
-
-                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-white" />
             </div>
 
+            {/* 下部の逆向きカーブ切り抜き */}
+            <div className="absolute inset-x-0 bottom-0 h-[120px] sm:h-[20vh]">
+                <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#f9fafb" stopOpacity="0.9" />
+                            <stop offset="100%" stopColor="#f9fafb" stopOpacity="1" />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        d="M0,20 Q50,-1 100,20 L100,20 L0,20 Z"
+                        className="sm:[d:'M0,20 Q50,-20 100,20 L100,20 L0,20 Z']"
+                        fill="url(#grad)"
+                    />
+                </svg>
+            </div>
+
+            {/* バブル */}
             <div className="pointer-events-none absolute inset-0">
                 {bubbles.map((b, i) => (
                     <div

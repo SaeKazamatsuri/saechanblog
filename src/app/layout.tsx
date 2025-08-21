@@ -1,40 +1,33 @@
-// app/layout.tsx
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import 'highlight.js/styles/github.css'
 import ScrollToTop from '@/components/layout/ScrollToTop'
+import IrisOverlay from '@/components/layout/IrisOverlay'
 
 const geistSans = Geist({
-    variable: '--font-geist-sans', // フォント変数
+    variable: '--font-geist-sans',
     subsets: ['latin'],
 })
 
 const geistMono = Geist_Mono({
-    variable: '--font-geist-mono', // フォント変数
+    variable: '--font-geist-mono',
     subsets: ['latin'],
 })
 
 export const metadata: Metadata = {
-    // 既定のタイトルと説明
     title: 'ショートランドのこかげ',
     description: '風祭小枝のブログ',
-
-    // 相対URLを絶対URLに解決するための基点
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sae-chan.net'),
-
-    // Open Graph の既定
     openGraph: {
-        type: 'website', // 既定のタイプ
-        siteName: 'ショートランドのこかげ', // サイト名
-        images: ['/og-default.png'], // 既定OG画像（public/og-default.png を配置）
+        type: 'website',
+        siteName: 'ショートランドのこかげ',
+        images: ['/og-default.png'],
     },
-
-    // Twitterカードの既定
     twitter: {
-        card: 'summary_large_image', // 画像大きめカード
+        card: 'summary_large_image',
         creator: '@SaeKazamatsuri',
-        images: ['/og-default.png'], // 既定Twitter画像
+        images: ['/og-default.png'],
     },
 }
 
@@ -44,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <ScrollToTop />
                 {children}
+                <IrisOverlay />
             </body>
         </html>
     )
