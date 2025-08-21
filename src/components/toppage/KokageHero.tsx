@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
+import Image from 'next/image'
 
 type BubbleSpec = { left: number; size: number; delay: number }
 
@@ -16,7 +17,6 @@ export default function KokageHero() {
     const [sparkles, setSparkles] = useState<{ left: number; top: number }[]>([])
 
     useEffect(() => {
-        // 泡をたくさん小さめで生成
         const newBubbles = Array.from({ length: 40 }).map(() => ({
             left: Math.random() * 100,
             size: 2 + Math.random() * 8,
@@ -44,7 +44,6 @@ export default function KokageHero() {
             gsap.set('.wave', { yPercent: 15 })
             gsap.set('.diamond', { yPercent: -10, rotate: -15 })
 
-            // タイトル文字
             gsap.fromTo(
                 '.char',
                 { yPercent: 120, opacity: 0, rotateX: 70, scale: 0.9 },
@@ -66,7 +65,6 @@ export default function KokageHero() {
                 delay: 0.3,
             })
 
-            // 波・ひし形（前回と同じ）
             const waveDur = 6
             gsap.to('#wave1', { yPercent: 0, ease: 'sine.out', duration: 1.2 })
             gsap.to('#wave2', { yPercent: 0, ease: 'sine.out', duration: 1.4, delay: 0.1 })
@@ -108,7 +106,6 @@ export default function KokageHero() {
                 })
             }
 
-            // 炭酸風 泡アニメーション
             if (!prefersReduced) {
                 gsap.utils.toArray<HTMLElement>('.bubble').forEach((el) => {
                     const loop = () => {
@@ -121,7 +118,7 @@ export default function KokageHero() {
                             yPercent: -120,
                             opacity: 0,
                             scale: gsap.utils.random(1, 1.6),
-                            duration: gsap.utils.random(1, 2), // 早めに消える
+                            duration: gsap.utils.random(1, 2),
                             ease: 'sine.out',
                             delay: Math.random() * 1.2,
                             onComplete: loop,
@@ -131,7 +128,6 @@ export default function KokageHero() {
                 })
             }
 
-            // 光の粒
             if (!prefersReduced) {
                 gsap.utils.toArray<HTMLElement>('.sparkle').forEach((el) => {
                     const float = () => {
@@ -152,46 +148,76 @@ export default function KokageHero() {
             }
         }, root)
 
-        // クリック・マウス移動で泡を出す（炭酸仕様）
         const container = root.current
         let clickHandler: ((e: MouseEvent) => void) | null = null
         let moveHandler: ((e: MouseEvent) => void) | null = null
 
         if (container) {
-            const createBubble = (x: number, y: number) => {
-                const bubble = document.createElement('div')
-                bubble.className = 'pointer-events-none absolute rounded-full bg-white/70 will-change-transform'
-                const size = 2 + Math.random() * 6
-                bubble.style.width = `${size}px`
-                bubble.style.height = `${size}px`
-                bubble.style.left = `${x - size / 2}px`
-                bubble.style.top = `${y - size / 2}px`
-                container.appendChild(bubble)
+            // 小さい波紋（マウス移動用）
+            const createRippleSmall = (x: number, y: number) => {
+                const ripple = document.createElement('div')
+                ripple.className =
+                    'pointer-events-none absolute rounded-full border border-white/60 bg-white/10 will-change-transform'
+                const size = 20
+                ripple.style.width = `${size}px`
+                ripple.style.height = `${size}px`
+                ripple.style.left = `${x - size / 2}px`
+                ripple.style.top = `${y - size / 2}px`
+                container.appendChild(ripple)
 
                 gsap.fromTo(
-                    bubble,
-                    { y: 0, opacity: 1, scale: 0.8 },
+                    ripple,
+                    { scale: 0.2, opacity: 0.8 },
                     {
-                        y: -100,
+                        scale: 3,
                         opacity: 0,
-                        scale: 1.6,
-                        duration: 1 + Math.random(),
+                        duration: 1.0,
                         ease: 'sine.out',
-                        onComplete: () => bubble.remove(),
+                        onComplete: () => ripple.remove(),
                     }
                 )
+            }
+
+            // 大きい波紋（クリック用・ディティールあり）
+            const createRippleBig = (x: number, y: number) => {
+                const size = 50
+                const maxRadius = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2)
+
+                for (let i = 0; i < 3; i++) {
+                    const ripple = document.createElement('div')
+                    ripple.className =
+                        'pointer-events-none absolute rounded-full border border-white/50 bg-white/5 will-change-transform'
+                    ripple.style.width = `${size}px`
+                    ripple.style.height = `${size}px`
+                    ripple.style.left = `${x - size / 2}px`
+                    ripple.style.top = `${y - size / 2}px`
+                    container.appendChild(ripple)
+
+                    gsap.fromTo(
+                        ripple,
+                        { scale: 0.2, opacity: 0.6 },
+                        {
+                            scale: (maxRadius / size) * (1 + i * 0.1),
+                            opacity: 0,
+                            duration: 1.5 + i * 0.3,
+                            ease: 'sine.out',
+                            delay: i * 0.15,
+                            onComplete: () => ripple.remove(),
+                        }
+                    )
+                }
             }
 
             let lastMove = 0
             moveHandler = (e: MouseEvent) => {
                 const now = Date.now()
                 if (now - lastMove > 100) {
-                    createBubble(e.clientX, e.clientY)
+                    createRippleSmall(e.clientX, e.clientY)
                     lastMove = now
                 }
             }
 
-            clickHandler = (e: MouseEvent) => createBubble(e.clientX, e.clientY)
+            clickHandler = (e: MouseEvent) => createRippleBig(e.clientX, e.clientY)
 
             container.addEventListener('click', clickHandler)
             container.addEventListener('mousemove', moveHandler)
@@ -225,19 +251,17 @@ export default function KokageHero() {
                 bubble,
                 { y: 0, opacity: 1, scale: 0.8 },
                 {
-                    y: -window.innerHeight, // 画面上部まで流れる
+                    y: -window.innerHeight,
                     opacity: 0,
                     scale: 1.6,
-                    duration: 3 + Math.random() * 2, // 上まで届く時間を少し長めに
+                    duration: 3 + Math.random() * 2,
                     ease: 'sine.out',
                     onComplete: () => bubble.remove(),
                 }
             )
         }
 
-        // 頻度を高めて0.25秒ごとに泡を出す
         const interval = setInterval(createAutoBubble, 250)
-
         return () => clearInterval(interval)
     }, [])
 
@@ -246,14 +270,22 @@ export default function KokageHero() {
             ref={root}
             className="relative h-[105vh] w-full overflow-hidden bg-gradient-to-b from-sky-900 via-blue-800 to-sky-700 text-white mb-14"
         >
-            {/* 光のベール */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-blue-900/60 via-transparent to-white/5" />
-
-            {/* 下部の白グラデーション（10vhに延長） */}
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[10vh] bg-gradient-to-b from-transparent to-white" />
 
-            {/* コンテンツ中央 */}
             <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-center">
+                <div className="relative w-[40vh] h-[40vh] rotate-45 overflow-hidden rounded-lg">
+                    <Image
+                        src="/image/hero.png"
+                        alt="中央の画像"
+                        fill
+                        className="object-cover"
+                        sizes="40vw"
+                        priority
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                </div>
+
                 <h1 className="select-none font-bold tracking-wide text-5xl sm:text-6xl md:text-7xl lg:text-7xl drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
                     {chars.map((c, i) => (
                         <span key={`${c}-${i}`} className="char will-change-transform">
@@ -263,17 +295,14 @@ export default function KokageHero() {
                 </h1>
 
                 <div className="underline mt-4 h-1 w-56 rounded-full bg-white/80 sm:w-64 md:w-80 will-change-transform" />
-
                 <p className="mt-4 max-w-xl text-sm text-blue-100/90 sm:text-base">風祭小枝のブログへようこそ</p>
             </div>
 
-            {/* ひし形 */}
             <div className="diamond pointer-events-none absolute left-10 top-16 h-10 w-10 rotate-45 rounded-md border border-white/40 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute right-12 top-24 h-6 w-6 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute left-1/4 top-1/3 h-8 w-8 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute right-1/4 top-1/2 h-5 w-5 rotate-45 rounded-md border border-white/20 bg-white/5 backdrop-blur-[1px] will-change-transform" />
 
-            {/* 波 */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[48%] overflow-hidden">
                 <div
                     id="wave3"
@@ -288,11 +317,9 @@ export default function KokageHero() {
                     className="wave absolute -left-1/2 bottom-20 h-32 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-400/80 to-sky-200/30 will-change-transform"
                 />
 
-                {/* 波の下のグラデーション */}
                 <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-white" />
             </div>
 
-            {/* 泡 */}
             <div className="pointer-events-none absolute inset-0">
                 {bubbles.map((b, i) => (
                     <div
