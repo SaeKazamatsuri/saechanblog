@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import 'highlight.js/styles/github.css'
 import ScrollToTop from '@/components/layout/ScrollToTop'
-import IrisOverlay from '@/components/layout/IrisOverlay'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -37,7 +36,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <ScrollToTop />
                 {children}
-                <IrisOverlay />
             </body>
         </html>
     )

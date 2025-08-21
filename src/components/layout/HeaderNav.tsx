@@ -147,7 +147,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
                     <aside
                         ref={menuRef}
                         id="mobile-menu"
-                        className={`fixed top-0 left-0 z-50 h-full w-4/5 max-w-sm bg-gray-900 shadow-xl transition-transform duration-200 ${
+                        className={`fixed top-0 left-0 z-50 h-screen w-4/5 max-w-sm bg-gray-900 shadow-xl transition-transform duration-200 ${
                             open ? 'translate-x-0' : '-translate-x-full'
                         }`}
                         role="dialog" // モーダル的意味付け

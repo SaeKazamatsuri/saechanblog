@@ -8,7 +8,9 @@ import Image from 'next/image'
 export default function IrisOverlay() {
     const overlayRef = useRef<HTMLDivElement>(null)
     const imgWrapRef = useRef<HTMLDivElement>(null)
-    const transitionCoverRef = useRef<HTMLDivElement>(null)
+    const coverWhiteRef = useRef<HTMLDivElement>(null)
+    const coverSkyRef = useRef<HTMLDivElement>(null)
+    const coverBlueRef = useRef<HTMLDivElement>(null)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -16,7 +18,6 @@ export default function IrisOverlay() {
     const transitionStartTimeRef = useRef<number | null>(null)
     const [enabled] = useState(true)
 
-    // 画面の長い辺を基準にした正方形ひし形を返す
     const makeDiamondPolygon = (sizeVMaxPct: number) => {
         const overlay = overlayRef.current
         if (!overlay) return 'polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%)'
@@ -30,20 +31,17 @@ export default function IrisOverlay() {
         return `polygon(50% ${50 - yPct}%, ${50 + xPct}% 50%, 50% ${50 + yPct}%, ${50 - xPct}% 50%)`
     }
 
-    // 初期化
     useEffect(() => {
-        // カバーと画像は最初は非表示
-        gsap.set(transitionCoverRef.current, { autoAlpha: 0 })
+        gsap.set([coverWhiteRef.current, coverSkyRef.current, coverBlueRef.current], { autoAlpha: 0 })
         gsap.set(imgWrapRef.current, { autoAlpha: 0, scale: 1 })
     }, [])
 
-    // クリックで退出トランジション
     useEffect(() => {
         if (!enabled) return
         const overlay = overlayRef.current
         const imgWrap = imgWrapRef.current
-        const cover = transitionCoverRef.current
-        if (!overlay || !imgWrap || !cover) return
+        const covers = [coverWhiteRef.current, coverSkyRef.current, coverBlueRef.current]
+        if (!overlay || !imgWrap || covers.some((c) => !c)) return
 
         const onClick = (e: MouseEvent) => {
             const target = (e.target as HTMLElement).closest('a')
@@ -59,27 +57,22 @@ export default function IrisOverlay() {
             e.preventDefault()
             transitionStartTimeRef.current = Date.now()
 
-            // オーバーレイを表示し、開始状態を明示セット
+            gsap.set('.root', { autoAlpha: 0 })
+
             gsap.set(overlay, { display: 'block' })
-            gsap.set(cover, { autoAlpha: 0, clipPath: makeDiamondPolygon(0) })
+            covers.forEach((c) => gsap.set(c, { autoAlpha: 0, clipPath: makeDiamondPolygon(0) }))
             gsap.set(imgWrap, { autoAlpha: 0, scale: 0.92 })
 
-            // 退出アニメーション：カバー拡大と画像フェードイン＋微スケール
-            const tlOut = gsap.timeline({
-                defaults: { ease: 'power3.inOut' },
-            })
-
-            // 画像は先に柔らかく見せてからカバーで包む
+            const tlOut = gsap.timeline({ defaults: { ease: 'power3.inOut' } })
             tlOut.to(imgWrap, { autoAlpha: 1, scale: 1, duration: 0.45 }, 0)
-            tlOut.to(
-                cover,
-                {
-                    autoAlpha: 1,
-                    clipPath: makeDiamondPolygon(100),
-                    duration: 0.6,
-                },
-                0
-            )
+
+            covers.forEach((c, i) => {
+                tlOut.to(
+                    c,
+                    { autoAlpha: 1, clipPath: makeDiamondPolygon(100), duration: 0.6 },
+                    i * 0.13 // 少しずつずらして重なり感
+                )
+            })
 
             tlOut.add(() => {
                 router.push(url.pathname + url.search + url.hash)
@@ -90,12 +83,11 @@ export default function IrisOverlay() {
         return () => document.removeEventListener('click', onClick)
     }, [enabled, router, pathname])
 
-    // パス変更後＝到着側トランジション
     useEffect(() => {
         const overlay = overlayRef.current
         const imgWrap = imgWrapRef.current
-        const cover = transitionCoverRef.current
-        if (!overlay || !imgWrap || !cover) return
+        const covers = [coverWhiteRef.current, coverSkyRef.current, coverBlueRef.current]
+        if (!overlay || !imgWrap || covers.some((c) => !c)) return
 
         if (!firstLoadDoneRef.current) {
             firstLoadDoneRef.current = true
@@ -111,12 +103,11 @@ export default function IrisOverlay() {
         const delay = Math.max(0, 1000 - elapsedTime) / 1000
 
         const playArrivalAnimation = () => {
-            // 退出の続きからスタート
             gsap.set(overlay, { display: 'block' })
-            gsap.set(cover, { autoAlpha: 1, clipPath: makeDiamondPolygon(100) })
+            covers.forEach((c) => gsap.set(c, { autoAlpha: 1, clipPath: makeDiamondPolygon(100) }))
             gsap.set(imgWrap, { autoAlpha: 1, scale: 1.0 })
+            gsap.set('.root', { autoAlpha: 1 })
 
-            // 到着アニメ：カバー収縮と画像フェードアウト＋微スケールダウン
             const tlIn = gsap.timeline({
                 defaults: { ease: 'power3.inOut' },
                 onComplete: () => {
@@ -126,10 +117,12 @@ export default function IrisOverlay() {
                 },
             })
 
-            // 画像はカバーよりほんの少し先に溶け始める
             tlIn.to(imgWrap, { autoAlpha: 0, scale: 0.96, duration: 0.6 }, 0.05)
-            tlIn.to(cover, { clipPath: makeDiamondPolygon(0), duration: 0.6 }, 0)
-            tlIn.to(cover, { autoAlpha: 0, duration: 0.12 }, '-=0.05')
+
+            covers.forEach((c, i) => {
+                tlIn.to(c, { clipPath: makeDiamondPolygon(0), duration: 0.6 }, i * 0.05)
+                tlIn.to(c, { autoAlpha: 0, duration: 0.12 }, '-=0.05')
+            })
         }
 
         gsap.delayedCall(delay, playArrivalAnimation)
@@ -144,19 +137,40 @@ export default function IrisOverlay() {
                 inset: 0,
                 zIndex: 9999,
                 display: 'none',
-                // 合成安定化
                 willChange: 'opacity, transform',
                 backfaceVisibility: 'hidden',
             }}
         >
-            {/* 退出・到着アニメーションで共用するカバー */}
             <div
-                ref={transitionCoverRef}
+                ref={coverWhiteRef}
                 style={{
                     position: 'absolute',
                     inset: 0,
                     backgroundColor: '#ffffff',
-                    // clip-pathとopacityを頻繁に変えるためのヒント
+                    willChange: 'clip-path, opacity',
+                    backfaceVisibility: 'hidden',
+                    contain: 'layout paint style size',
+                }}
+                aria-hidden
+            />
+            <div
+                ref={coverSkyRef}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: '#0369a1',
+                    willChange: 'clip-path, opacity',
+                    backfaceVisibility: 'hidden',
+                    contain: 'layout paint style size',
+                }}
+                aria-hidden
+            />
+            <div
+                ref={coverBlueRef}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: '#1e40af',
                     willChange: 'clip-path, opacity',
                     backfaceVisibility: 'hidden',
                     contain: 'layout paint style size',
@@ -164,7 +178,6 @@ export default function IrisOverlay() {
                 aria-hidden
             />
 
-            {/* 中央画像 */}
             <div
                 ref={imgWrapRef}
                 className="relative overflow-hidden"
