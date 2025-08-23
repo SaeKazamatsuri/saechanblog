@@ -1,7 +1,9 @@
 // トップページ(/): 投稿一覧を表示
 import { getSortedPostsData } from '@/lib/posts'
-import PostList from '@/components/post/PostList'
 import KokageHero from '@/components/toppage/KokageHero'
+import WhatShortland from '@/components/toppage/WhatShortland'
+import SNSsection from '@/components/toppage/SNSsection'
+import LatestPostList from '@/components/toppage/LatestPostList'
 
 // デフォルトのサーバーコンポーネント
 export default function Page() {
@@ -11,7 +13,9 @@ export default function Page() {
     return (
         <div className="">
             <KokageHero />
-            <PostList posts={posts} heading="すべての投稿" />
+            <WhatShortland />
+            <LatestPostList posts={posts} />
+            <SNSsection />
         </div>
     )
 }

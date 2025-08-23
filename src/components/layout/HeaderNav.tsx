@@ -88,7 +88,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
 
                 <li className="relative group">
                     <Link href="/post" className="flex items-center h-12 px-4 hover:text-gray-300 gap-1">
-                        カテゴリ
+                        ブログ
                         {mounted ? <Icon icon="mdi:chevron-down" width="18" height="18" /> : null}
                     </Link>
                     <ul className="absolute left-0 top-full hidden min-w-max bg-gray-800 shadow-lg z-20 group-hover:block hover:block space-y-1">
@@ -171,7 +171,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
                                 aria-expanded={openCat}
                                 onClick={() => setOpenCat((v) => !v)}
                             >
-                                <span>カテゴリ</span>
+                                <span>ブログ</span>
                                 <Icon icon={openCat ? 'mdi:chevron-up' : 'mdi:chevron-down'} width="20" height="20" />
                             </button>
                             <div

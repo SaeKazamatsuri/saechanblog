@@ -20,7 +20,7 @@ export default function HeaderClient({ categories }: { categories: Category[] })
 
         // トップページのみスクロール監視で表示制御
         const handleScroll = () => {
-            setVisible(window.scrollY > window.innerHeight - 400)
+            setVisible(window.scrollY > window.innerHeight * 2 - 400)
         }
 
         // ページ遷移直後はスクロール位置が0なので必ず非表示からスタート

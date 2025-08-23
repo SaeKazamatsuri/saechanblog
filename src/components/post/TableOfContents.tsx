@@ -12,71 +12,19 @@ type Props = { headings: Heading[] }
 
 export default function TableOfContents({ headings }: Props) {
     const [activeId, setActiveId] = useState<string>(headings[0]?.id ?? '')
+    const [showTopButton, setShowTopButton] = useState(false) // スクロールで表示切替
     const prevActiveRef = useRef(activeId)
 
     useEffect(() => {
-        if (!headings.length) return
-
-        const handleIntersect: IntersectionObserverCallback = (entries) => {
-            const inView = entries
-                .filter((e) => e.isIntersecting)
-                .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
-
-            let next = prevActiveRef.current
-
-            const atTop = window.scrollY === 0
-            const atBottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight
-
-            if (atBottom) next = headings[headings.length - 1].id
-            else if (atTop) next = headings[0].id
-            else if (inView.length) next = inView[0].target.id
-
-            if (next !== prevActiveRef.current) {
-                prevActiveRef.current = next
-                setActiveId(next)
-            }
-        }
-
-        const observer = new IntersectionObserver(handleIntersect, {
-            rootMargin: '0px 0px -70% 0px',
-            threshold: 0,
-        })
-
-        const els: HTMLElement[] = []
-        headings.forEach(({ id }) => {
-            const el = document.getElementById(id)
-            if (el) {
-                observer.observe(el)
-                els.push(el)
-            }
-        })
-
-        return () => {
-            els.forEach((el) => observer.unobserve(el))
-            observer.disconnect()
-        }
-    }, [headings])
-
-    useEffect(() => {
-        if (!headings.length) return
-
         const handleScroll = () => {
-            const atTop = window.scrollY === 0
-            const atBottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight
-
-            let next: string | null = null
-            if (atBottom) next = headings[headings.length - 1].id
-            else if (atTop) next = headings[0].id
-
-            if (next && next !== prevActiveRef.current) {
-                prevActiveRef.current = next
-                setActiveId(next)
-            }
+            const scrolled = window.scrollY
+            // 100px以上スクロールしたら表示
+            setShowTopButton(scrolled > 100)
         }
 
         window.addEventListener('scroll', handleScroll, { passive: true })
         return () => window.removeEventListener('scroll', handleScroll)
-    }, [headings])
+    }, [])
 
     const handleClick = (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
@@ -88,24 +36,52 @@ export default function TableOfContents({ headings }: Props) {
         }
     }
 
+    const scrollToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        prevActiveRef.current = headings[0]?.id ?? ''
+        setActiveId(headings[0]?.id ?? '')
+    }
+
     return (
-        <nav aria-label="Table of contents" className="bg-white p-6 rounded-xl shadow-sm">
-            <p className="mb-2 font-semibold text-2xl text-blue-800">もくじ</p>
-            <ul className="space-y-1">
-                {headings.map((h) => (
-                    <li key={h.id} className={h.level === 3 ? 'pl-4' : ''}>
-                        <a
-                            href={`#${h.id}`}
-                            onClick={handleClick(h.id)}
-                            className={`block text-base transition-colors ${
-                                activeId === h.id ? 'text-blue-800 font-bold' : 'text-blue-600 hover:text-blue-700'
-                            }`}
-                        >
-                            {h.text}
-                        </a>
-                    </li>
-                ))}
-            </ul>
+        <nav aria-label="Table of contents">
+            {/* トップへ戻るボタン */}
+            <div
+                className={`overflow-hidden transition-all duration-500 ${
+                    showTopButton ? 'max-h-20 opacity-100 translate-x-0 mb-3' : 'max-h-0 opacity-0 translate-x-20'
+                }`}
+            >
+                <div className="bg-white p-6 rounded-xl shadow-sm transform transition-all duration-500">
+                    <a
+                        href="#top"
+                        onClick={scrollToTop}
+                        className="block font-semibold text-xl text-blue-800 hover:text-blue-700 transition-colors"
+                    >
+                        トップへ戻る
+                    </a>
+                </div>
+            </div>
+
+            {/* もくじ本体 */}
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+                <p className="mb-2 font-semibold text-xl text-blue-800">もくじ</p>
+                <hr className="my-2 border-b-1 border-blue-200/80" />
+                <ul className="mb-4 space-y-1">
+                    {headings.map((h) => (
+                        <li key={h.id} className={h.level === 3 ? 'pl-4' : ''}>
+                            <a
+                                href={`#${h.id}`}
+                                onClick={handleClick(h.id)}
+                                className={`block text-sm transition-colors ${
+                                    activeId === h.id ? 'text-blue-800 font-bold' : 'text-blue-600 hover:text-blue-700'
+                                }`}
+                            >
+                                {h.text}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </nav>
     )
 }

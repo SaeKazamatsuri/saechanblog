@@ -41,7 +41,6 @@ export default function KokageHero() {
         const ctx = gsap.context(() => {
             gsap.set('.char', { display: 'inline-block', transformPerspective: 400 })
             gsap.set('.underline', { scaleX: 0, transformOrigin: 'left center' })
-            gsap.set('.wave', { yPercent: 15 })
             gsap.set('.diamond', { yPercent: -10, rotate: -15 })
 
             gsap.fromTo(
@@ -65,36 +64,6 @@ export default function KokageHero() {
                 delay: 0.3,
             })
 
-            const waveDur = 6
-            gsap.to('#wave1', { yPercent: 0, ease: 'sine.out', duration: 1.2 })
-            gsap.to('#wave2', { yPercent: 0, ease: 'sine.out', duration: 1.4, delay: 0.1 })
-            gsap.to('#wave3', { yPercent: 0, ease: 'sine.out', duration: 1.6, delay: 0.2 })
-            if (!prefersReduced) {
-                gsap.to('#wave1', {
-                    xPercent: -10,
-                    scaleX: 1.05,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'sine.inOut',
-                    duration: waveDur,
-                })
-                gsap.to('#wave2', {
-                    xPercent: 8,
-                    rotate: 1,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'sine.inOut',
-                    duration: waveDur * 1.2,
-                })
-                gsap.to('#wave3', {
-                    xPercent: -6,
-                    scaleY: 1.1,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'sine.inOut',
-                    duration: waveDur * 1.4,
-                })
-            }
             if (!prefersReduced) {
                 gsap.to('.diamond', {
                     yPercent: 10,
@@ -195,13 +164,8 @@ export default function KokageHero() {
     return (
         <div
             ref={root}
-            className="relative h-[120vh] w-full overflow-hidden 
-             bg-[linear-gradient(to_bottom,_#0c4a6e_0%,_#1e40af_30%,_#0369a1_100%)] 
-             text-white"
+            className="relative h-[100vh] w-full overflow-hidden bg-gradient-to-b from-sky-950 via-blue-800 to-sky-700 text-white"
         >
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-blue-900/60 via-transparent to-white/5" />
-
-            {/* 背景画像（中央に配置） */}
             <div className="absolute left-1/2 top-[50vh] -translate-x-1/2 -translate-y-1/2 z-10 w-full px-6 inset-0 flex items-center justify-center">
                 <div className="relative w-[50vw] h-[50vw] md:w-[40vh] md:h-[40vh] lg:w-[60vh] lg:h-[60vh] overflow-hidden">
                     <Image
@@ -215,7 +179,6 @@ export default function KokageHero() {
                 </div>
             </div>
 
-            {/* テキスト群（必ず50vh位置） */}
             <div className="absolute left-1/2 top-[50vh] -translate-x-1/2 -translate-y-1/2 z-20 w-full px-6 text-center">
                 <h1 className="select-none font-bold tracking-wide text-5xl sm:text-6xl md:text-7xl lg:text-7xl drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
                     {chars.map((c, i) => (
@@ -238,39 +201,6 @@ export default function KokageHero() {
             <div className="diamond pointer-events-none absolute right-12 top-24 h-6 w-6 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute left-1/4 top-1/3 h-8 w-8 rotate-45 rounded-md border border-white/30 bg-white/5 backdrop-blur-[1px] will-change-transform" />
             <div className="diamond pointer-events-none absolute right-1/4 top-1/2 h-5 w-5 rotate-45 rounded-md border border-white/20 bg-white/5 backdrop-blur-[1px] will-change-transform" />
-
-            {/* 波エフェクト */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-[10vh] h-[48%] overflow-hidden">
-                <div
-                    id="wave3"
-                    className="wave absolute -left-1/2 bottom-0 h-48 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-600/70 to-sky-400/20 blur-[2px] will-change-transform"
-                />
-                <div
-                    id="wave2"
-                    className="wave absolute -left-1/2 bottom-10 h-40 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-500/75 to-sky-300/25 will-change-transform"
-                />
-                <div
-                    id="wave1"
-                    className="wave absolute -left-1/2 bottom-20 h-32 w-[200%] rounded-[100%] bg-gradient-to-t from-sky-400/80 to-sky-200/30 will-change-transform"
-                />
-            </div>
-
-            {/* 下部の逆向きカーブ切り抜き */}
-            <div className="absolute inset-x-0 bottom-0 h-[120px] sm:h-[20vh]">
-                <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#f9fafb" stopOpacity="0.9" />
-                            <stop offset="100%" stopColor="#f9fafb" stopOpacity="1" />
-                        </linearGradient>
-                    </defs>
-                    <path
-                        d="M0,20 Q50,-1 100,20 L100,20 L0,20 Z"
-                        className="sm:[d:'M0,20 Q50,-20 100,20 L100,20 L0,20 Z']"
-                        fill="url(#grad)"
-                    />
-                </svg>
-            </div>
 
             {/* バブル */}
             <div className="pointer-events-none absolute inset-0">
