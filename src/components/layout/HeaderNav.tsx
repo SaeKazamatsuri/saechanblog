@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react' // マウント検知と開閉状態
+import { createPortal } from 'react-dom' // 黒背景とメニューをbody直下に出すため
 import Link from 'next/link' // ルーティング
 import { Icon } from '@iconify/react' // アイコン
 
@@ -13,10 +14,9 @@ type Category = {
 // 受け取りProps
 type Props = {
     categories: Category[]
-    siteName: string
 }
 
-export default function HeaderNav({ categories, siteName }: Props) {
+export default function HeaderNav({ categories }: Props) {
     const [mounted, setMounted] = useState(false) // ハイドレーション対策
     const [open, setOpen] = useState(false) // モバイルメニュー開閉
     const [openCat, setOpenCat] = useState(false) // カテゴリ開閉
@@ -62,9 +62,15 @@ export default function HeaderNav({ categories, siteName }: Props) {
         <nav className="px-4">
             {/* スマホ〜タブレット用トップバー（横並び） */}
             <div className="lg:hidden flex items-center justify-between h-14">
-                <Link href="/" className="min-w-0 flex-1 pr-2">
-                    <span className="block text-lg font-semibold leading-none truncate">{siteName}</span>
-                </Link>
+                {/* クリック範囲をテキスト幅に限定するため、外側はレイアウト用のdiv、Linkはinline-blockにする */}
+                <div className="min-w-0 flex-1 pr-2 flex items-center">
+                    <Link href="/" className="inline-block max-w-full h-full">
+                        <span className="inline-flex items-center h-full text-lg font-semibold leading-none truncate">
+                            ショートランドのこかげ
+                        </span>
+                    </Link>
+                </div>
+
                 <button
                     ref={triggerRef}
                     type="button"
@@ -112,7 +118,7 @@ export default function HeaderNav({ categories, siteName }: Props) {
                     </Link>
                     <ul className="absolute left-0 top-full hidden min-w-max bg-gray-800 shadow-lg z-20 group-hover:block hover:block space-y-1">
                         {[
-                            { label: 'サイト運営について', href: '/charge-of-this-site' },
+                            { label: '運営者について', href: '/charge-of-this-site' },
                             { label: 'サイトマップ', href: '/site-map' },
                             { label: 'プライバシーポリシー', href: '/privacy-policy' },
                         ].map((link) => (
@@ -135,110 +141,135 @@ export default function HeaderNav({ categories, siteName }: Props) {
                 </li>
             </ul>
 
-            {/* モバイルメニュー（マウント後だけ描画してHydration防止） */}
-            {mounted ? (
-                <>
-                    <div
-                        className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
-                            open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                        }`}
-                        onClick={closeAll}
-                    />
-                    <aside
-                        ref={menuRef}
-                        id="mobile-menu"
-                        className={`fixed top-0 left-0 z-50 h-screen w-4/5 max-w-sm bg-gray-900 shadow-xl transition-transform duration-200 ${
-                            open ? 'translate-x-0' : '-translate-x-full'
-                        }`}
-                        role="dialog" // モーダル的意味付け
-                        aria-modal="true" // 背景はモーダル外
-                    >
-                        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
-                            <span className="text-lg font-semibold">メニュー</span>
-                            <button type="button" aria-label="メニューを閉じる" onClick={closeAll} className="p-2">
-                                <Icon icon="mdi:close" width="24" height="24" />
-                            </button>
-                        </div>
+            {/* モバイルメニュー（ポータルでbody直下に出して全画面の黒背景にする） */}
+            {mounted
+                ? createPortal(
+                      <>
+                          <div
+                              className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
+                                  open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                              }`}
+                              onClick={closeAll}
+                          />
+                          <aside
+                              ref={menuRef}
+                              id="mobile-menu"
+                              className={`fixed top-0 left-0 z-50 h-screen w-4/5 max-w-sm bg-gray-900 text-white shadow-xl transition-transform duration-200 ${
+                                  open ? 'translate-x-0' : '-translate-x-full'
+                              }`}
+                              role="dialog" // モーダル的意味付け
+                              aria-modal="true" // 背景はモーダル外
+                          >
+                              <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
+                                  <span className="text-lg font-semibold">メニュー</span>
+                                  <button
+                                      type="button"
+                                      aria-label="メニューを閉じる"
+                                      onClick={closeAll}
+                                      className="p-2"
+                                  >
+                                      <Icon icon="mdi:close" width="24" height="24" />
+                                  </button>
+                              </div>
 
-                        <div className="px-2 py-2">
-                            <Link href="/" className="block px-3 py-3 rounded hover:bg-gray-800" onClick={closeAll}>
-                                ホーム
-                            </Link>
+                              <div className="px-2 py-2">
+                                  <Link
+                                      href="/"
+                                      className="block px-3 py-3 rounded hover:bg-gray-800"
+                                      onClick={closeAll}
+                                  >
+                                      ホーム
+                                  </Link>
 
-                            <button
-                                type="button"
-                                className="w-full flex items-center justify-between px-3 py-3 rounded hover:bg-gray-800"
-                                aria-expanded={openCat}
-                                onClick={() => setOpenCat((v) => !v)}
-                            >
-                                <span>ブログ</span>
-                                <Icon icon={openCat ? 'mdi:chevron-up' : 'mdi:chevron-down'} width="20" height="20" />
-                            </button>
-                            <div
-                                className={`${openCat ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-[max-height] duration-200`}
-                            >
-                                <div className="pl-3">
-                                    <Link
-                                        href="/post"
-                                        className="block px-3 py-2 rounded hover:bg-gray-800"
-                                        onClick={closeAll}
-                                    >
-                                        一覧へ
-                                    </Link>
-                                    {categories.map((cat) => (
-                                        <Link
-                                            key={cat.slug}
-                                            href={`/post/${cat.slug}`}
-                                            className="block px-3 py-2 rounded hover:bg-gray-800"
-                                            onClick={closeAll}
-                                        >
-                                            {cat.displayName}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
+                                  <button
+                                      type="button"
+                                      className="w-full flex items-center justify-between px-3 py-3 rounded hover:bg-gray-800"
+                                      aria-expanded={openCat}
+                                      onClick={() => setOpenCat((v) => !v)}
+                                  >
+                                      <span>ブログ</span>
+                                      <Icon
+                                          icon={openCat ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+                                          width="20"
+                                          height="20"
+                                      />
+                                  </button>
+                                  <div
+                                      className={`${
+                                          openCat ? 'max-h-96' : 'max-h-0'
+                                      } overflow-hidden transition-[max-height] duration-200`}
+                                  >
+                                      <div className="pl-3">
+                                          <Link
+                                              href="/post"
+                                              className="block px-3 py-2 rounded hover:bg-gray-800"
+                                              onClick={closeAll}
+                                          >
+                                              一覧へ
+                                          </Link>
+                                          {categories.map((cat) => (
+                                              <Link
+                                                  key={cat.slug}
+                                                  href={`/post/${cat.slug}`}
+                                                  className="block px-3 py-2 rounded hover:bg-gray-800"
+                                                  onClick={closeAll}
+                                              >
+                                                  {cat.displayName}
+                                              </Link>
+                                          ))}
+                                      </div>
+                                  </div>
 
-                            <button
-                                type="button"
-                                className="w-full flex items-center justify-between px-3 py-3 rounded hover:bg-gray-800"
-                                aria-expanded={openAbout}
-                                onClick={() => setOpenAbout((v) => !v)}
-                            >
-                                <span>サイトについて</span>
-                                <Icon icon={openAbout ? 'mdi:chevron-up' : 'mdi:chevron-down'} width="20" height="20" />
-                            </button>
-                            <div
-                                className={`${openAbout ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-[max-height] duration-200`}
-                            >
-                                <div className="pl-3">
-                                    {[
-                                        { label: 'サイト運営について', href: '/charge-of-this-site' },
-                                        { label: 'サイトマップ', href: '/site-map' },
-                                        { label: 'プライバシーポリシー', href: '/privacy-policy' },
-                                    ].map((link) => (
-                                        <Link
-                                            key={link.label}
-                                            href={link.href}
-                                            className="block px-3 py-2 rounded hover:bg-gray-800"
-                                            onClick={closeAll}
-                                        >
-                                            {link.label}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
+                                  <button
+                                      type="button"
+                                      className="w-full flex items-center justify-between px-3 py-3 rounded hover:bg-gray-800"
+                                      aria-expanded={openAbout}
+                                      onClick={() => setOpenAbout((v) => !v)}
+                                  >
+                                      <span>サイト情報</span>
+                                      <Icon
+                                          icon={openAbout ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+                                          width="20"
+                                          height="20"
+                                      />
+                                  </button>
+                                  <div
+                                      className={`${
+                                          openAbout ? 'max-h-96' : 'max-h-0'
+                                      } overflow-hidden transition-[max-height] duration-200`}
+                                  >
+                                      <div className="pl-3">
+                                          {[
+                                              { label: 'サイトについて', href: '/about' },
+                                              { label: '運営者について', href: '/charge-of-this-site' },
+                                              { label: 'サイトマップ', href: '/site-map' },
+                                              { label: 'プライバシーポリシー', href: '/privacy-policy' },
+                                          ].map((link) => (
+                                              <Link
+                                                  key={link.label}
+                                                  href={link.href}
+                                                  className="block px-3 py-2 rounded hover:bg-gray-800"
+                                                  onClick={closeAll}
+                                              >
+                                                  {link.label}
+                                              </Link>
+                                          ))}
+                                      </div>
+                                  </div>
 
-                            <Link
-                                href="/contact"
-                                className="block px-3 py-3 rounded hover:bg-gray-800"
-                                onClick={closeAll}
-                            >
-                                お問い合わせ
-                            </Link>
-                        </div>
-                    </aside>
-                </>
-            ) : null}
+                                  <Link
+                                      href="/contact"
+                                      className="block px-3 py-3 rounded hover:bg-gray-800"
+                                      onClick={closeAll}
+                                  >
+                                      お問い合わせ
+                                  </Link>
+                              </div>
+                          </aside>
+                      </>,
+                      document.body
+                  )
+                : null}
         </nav>
     )
 }

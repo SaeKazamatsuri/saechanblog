@@ -143,7 +143,7 @@ export default async function Page({ params }: Props) {
                 </div>
             </div>
 
-            <aside className="hidden lg:block w-64 flex-shrink-0">
+            <aside className="w-64 flex-shrink-0">
                 <div className="sticky top-6 z-10">
                     <TableOfContents headings={headings} />
                 </div>

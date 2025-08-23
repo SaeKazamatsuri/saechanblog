@@ -45,7 +45,7 @@ export default function HeaderClient({ categories }: { categories: Category[] })
                     <Link href="/">ショートランドのこかげ</Link>
                 </h1>
             </div>
-            <HeaderNav categories={categories} siteName="ショートランドのこかげ" />
+            <HeaderNav categories={categories} />
         </header>
     )
 }
