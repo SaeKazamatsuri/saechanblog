@@ -136,7 +136,7 @@ const WhatShortland = () => {
                     {books.map((book) => (
                         <div key={book.id} className="p-3 md:p-4 flex flex-col items-center">
                             <div className="w-full md:w-[250px]">
-                                <div className="relative w-full aspect-[250/353] mb-6">
+                                <div className="relative w-full aspect-[250/353] mb-3">
                                     <Image src={book.src} alt={book.alt} fill className="object-cover rounded-md" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">

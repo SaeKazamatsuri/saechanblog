@@ -17,16 +17,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: 'ショートランドのこかげ',
     description: '風祭小枝のブログ',
+    keywords: ['ショートランドのこかげ', '風祭小枝', '読ん棚', '個人開発'],
+    creator: '風祭小枝',
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sae-chan.net'),
     openGraph: {
         type: 'website',
         siteName: 'ショートランドのこかげ',
-        images: ['/og-default.png'],
+        title: 'ショートランドのこかげ',
+        description: '風祭小枝のブログ',
+        images: ['/image/ogp.jpg'],
+        locale: 'ja_JP',
     },
     twitter: {
         card: 'summary_large_image',
+        title: 'ショートランドのこかげ',
+        description: '風祭小枝のブログ',
         creator: '@SaeKazamatsuri',
-        images: ['/og-default.png'],
+        images: ['/image/ogp.jpg'],
     },
 }
 

@@ -91,7 +91,7 @@ const SNSsection: React.FC<Props> = ({ items = DEFAULT_ITEMS }) => {
         >
             <div className="max-w-4xl w-full px-6">
                 <h2 id="sns-heading" className="text-[clamp(20px,4vw,48px)] font-bold text-black text-center mb-4">
-                    フォローする
+                    各種リンク
                 </h2>
                 <ul className="flex flex-wrap gap-6 justify-center items-center">
                     {items.map((item) => (
