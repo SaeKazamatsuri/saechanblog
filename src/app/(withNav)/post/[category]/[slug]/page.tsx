@@ -96,7 +96,12 @@ export default async function Page({ params }: Props) {
                                     className={`scroll-mt-24 text-xl sm:text-2xl font-semibold mt-10 mb-3 text-blue-800 ${className ?? ''}`}
                                 />
                             ),
-                            p: (props) => <p className="leading-relaxed text-slate-800 text-lg" {...props} />,
+                            p: (props) => (
+                                <p
+                                    className="leading-relaxed text-slate-800 text-lg break-all sm:break-words"
+                                    {...props}
+                                />
+                            ),
                             a: ({ href = '', ...props }) => (
                                 <a
                                     href={href}
@@ -120,16 +125,24 @@ export default async function Page({ params }: Props) {
                                     {...props}
                                 />
                             ),
-                            pre: (props) => (
-                                <pre
-                                    className="p-2 my-5 rounded-lg shadow-inner text-sm sm:text-base border-2 border-gray-200"
-                                    {...props}
-                                />
+                            // 横スクロール用のコンテナで包んで、長い行でも画面幅を超えたらスクロールできるようにする
+                            pre: ({ className, ...props }) => (
+                                <div className="w-full overflow-x-auto">
+                                    <pre
+                                        {...props}
+                                        className={`p-2 my-5 rounded-lg shadow-inner text-sm sm:text-base border-2 border-gray-200 ${className ?? ''}`}
+                                    />
+                                </div>
                             ),
                             hr: (props) => <hr className="my-10 border-t-2 border-blue-100" {...props} />,
-
-                            table: (props) => (
-                                <table className="w-full border-collapse border border-blue-200 my-6" {...props} />
+                            // テーブルは必ずラッパーでoverflow-x-auto。table本体にmin-wを与えて横スクロールを発生させる
+                            table: ({ className, ...props }) => (
+                                <div className="w-full overflow-x-auto">
+                                    <table
+                                        {...props}
+                                        className={`w-full min-w-[640px] border-collapse border border-blue-200 my-6 ${className ?? ''}`}
+                                    />
+                                </div>
                             ),
                             thead: (props) => <thead className="bg-blue-100 text-blue-900 font-semibold" {...props} />,
                             tbody: (props) => <tbody className="divide-y divide-blue-200" {...props} />,

@@ -86,7 +86,7 @@ const WhatShortland = () => {
                     </filter>
                 </defs>
 
-                {/* うねるライン（後でstroke-dashで描かせる） */}
+                {/* うねるライン */}
                 <g filter="url(#glow)" opacity="0.9">
                     <path
                         className="draw-line"
@@ -115,48 +115,53 @@ const WhatShortland = () => {
                 </g>
             </svg>
 
-            <div className="p-6 md:p-8 relative">
-                <div className="fade-up mb-16">
-                    <h2 className="text-[clamp(20px,4vw,48px)] font-bold text-white mb-4">
-                        「ショートランドのこかげ」とは…
-                    </h2>
-                    <p className="whitespace-nowrap text-[clamp(10px,2vw,24px)] text-white leading-relaxed">
-                        同人誌管理システム「読ん棚」を開発しているサークルです。
-                    </p>
-                </div>
+            <div className="fade-up mb-16 md:mb-32">
+                <h2 className="text-3xl md:text-6xl font-bold text-white mb-8 md:mb-4">
+                    <span className="block md:inline">「ショートランドの</span>
+                    <span className="block md:inline">こかげ」とは</span>
+                </h2>
+                <p className="text-[clamp(1vw,1.5rem,6vw)] text-white leading-relaxed">
+                    <span className="block md:inline">同人誌管理システム</span>
+                    <span className="block md:inline">「読ん棚」</span>
+                    <span className="block md:inline">を開発しているサークルです。</span>
+                </p>
+            </div>
 
-                <div className="fade-up mb-3">
-                    <h2 className="text-[clamp(20px,4vw,48px)] font-bold text-white mb-4">読ん棚シリーズ</h2>
-                    <p className="whitespace-nowrap text-[clamp(10px,2vw,24px)] text-white leading-relaxed">
-                        DLsite・BOOTHにて頒布中！
-                    </p>
-                </div>
+            <div className="fade-up mb-3 md:mb-6">
+                <h2 className="text-3xl md:text-6xl font-bold text-white mb-4">読ん棚シリーズ</h2>
+                <p className="text-[clamp(1vw,1.5rem,6vw)] text-white leading-relaxed">DLsite・BOOTHにて頒布中！</p>
+            </div>
 
-                <div className="fade-up grid grid-cols-2 gap-1 max-w-5xl w-full">
+            <div className="relative mb-32">
+                <div className="fade-up grid grid-cols-2 gap-2 sm:gap-8 w-full">
                     {books.map((book) => (
-                        <div key={book.id} className="p-3 md:p-4 flex flex-col items-center">
-                            <div className="w-full md:w-[250px]">
-                                <div className="relative w-full aspect-[250/353] mb-3">
-                                    <Image src={book.src} alt={book.alt} fill className="object-cover rounded-md" />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                                    <a
-                                        href={book.dlsiteUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block text-center bg-[#052a83] text-white rounded-md py-2 hover:bg-sky-700 transition"
-                                    >
-                                        DLsite
-                                    </a>
-                                    <a
-                                        href={book.boothUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block text-center bg-[#fd5257] text-white rounded-md py-2 hover:bg-red-600 transition"
-                                    >
-                                        BOOTH
-                                    </a>
-                                </div>
+                        <div key={book.id} className="flex flex-col items-center mx-auto">
+                            <div className="relative mb-3 sm:mb-6 w-[35vw] md:w-[30vw] lg:w-[20vw] aspect-[3/4]">
+                                <Image
+                                    src={book.src}
+                                    alt={book.alt}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    className="object-cover rounded-lg shadow-lg"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 w-[35vw] md:w-[30vw] lg:w-[20vw] md:grid-cols-2 gap-2 sm:gap-4">
+                                <a
+                                    href={book.dlsiteUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block text-center text-white rounded-md p-3 text-sm sm:text-lg font-semibold transition duration-200 bg-[#052a83] hover:bg-sky-700"
+                                >
+                                    DLsite
+                                </a>
+                                <a
+                                    href={book.boothUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block text-center text-white rounded-md p-3 text-sm sm:text-lg font-semibold transition duration-200 bg-[#fd5257] hover:bg-red-600"
+                                >
+                                    BOOTH
+                                </a>
                             </div>
                         </div>
                     ))}

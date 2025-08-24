@@ -180,7 +180,7 @@ export default function KokageHero() {
             </div>
 
             <div className="absolute left-1/2 top-[50vh] -translate-x-1/2 -translate-y-1/2 z-20 w-full px-6 text-center">
-                <h1 className="select-none font-bold tracking-wide text-5xl sm:text-6xl md:text-7xl lg:text-7xl drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
+                <h1 className="select-none font-bold tracking-wide text-2xl sm:text-6xl md:text-7xl lg:text-7xl drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
                     {chars.map((c, i) => (
                         <span key={`${c}-${i}`} className="char will-change-transform pointer-events-none">
                             {c === ' ' ? '\u00A0' : c}
