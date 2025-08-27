@@ -16,7 +16,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: 'ショートランドのこかげ',
-    description: '風祭小枝のブログ',
+    description:
+        '風祭小枝のブログ。主にサークル「ショートランドのこかげ」の宣伝をおこないます。\
+		また、技術的なメモや開発している同人誌管理システム「読ん棚」の進捗を報告します。\
+		更新頻度はマイペースなので、気長にお待ちください。',
     keywords: ['ショートランドのこかげ', '風祭小枝', '読ん棚', '個人開発'],
     creator: '風祭小枝',
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sae-chan.net'),

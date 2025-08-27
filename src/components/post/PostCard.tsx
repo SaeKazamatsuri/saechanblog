@@ -38,14 +38,21 @@ export default function PostCard({ post, imagePriority = false }: Props) {
                         {coverUrl ? (
                             <Image
                                 src={coverUrl}
-                                alt={`${post.title} のカバー画像`} // 画像代替テキスト
-                                fill // 画像を親コンテナにフィット
-                                className="object-cover" // 中央トリミング
-                                sizes="(min-width: 1280px) 400px, (min-width: 1024px) 340px, (min-width: 768px) 36vw, 100vw" // レスポンシブヒント
+                                alt={`${post.title} のカバー画像`}
+                                fill
+                                className="object-cover"
+                                sizes="(min-width: 1280px) 400px, (min-width: 1024px) 340px, (min-width: 768px) 36vw, 100vw"
                                 priority={imagePriority}
                             />
                         ) : (
-                            <div className="h-full w-full bg-gray-100" /> // 画像なし時もOGP比率を維持
+                            <Image
+                                src="/image/ogp.jpg"
+                                alt="デフォルトのOGP画像"
+                                fill
+                                className="object-cover"
+                                sizes="(min-width: 1280px) 400px, (min-width: 1024px) 340px, (min-width: 768px) 36vw, 100vw"
+                                priority={imagePriority}
+                            />
                         )}
                     </div>
 
