@@ -65,18 +65,28 @@ function logAccess(origin: string, ip: string, url: string, status: number) {
     }).catch(() => {})
 }
 
+function isSafeExternalUrl(to: string, origin: string) {
+    try {
+        const u = new URL(to)
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
+        const originHost = new URL(origin).host
+        return u.host !== originHost
+    } catch {
+        return false
+    }
+}
+
 export function middleware(req: NextRequest) {
     const now = Date.now()
-    const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
+    const ipRaw = req.headers.get('x-forwarded-for') ?? 'unknown'
+    const ip = ipRaw.split(',')[0].trim()
     const url = req.nextUrl.pathname
 
-    // .php 拒否
     if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
         logAccess(req.nextUrl.origin, ip, url, 403)
         return new NextResponse('Forbidden: PHP access blocked.', { status: 403 })
     }
 
-    // 不正アクセスパターン拒否
     if (blockedPaths.some((blocked) => url.includes(blocked))) {
         logAccess(req.nextUrl.origin, ip, url, 403)
         return new NextResponse('Forbidden: Suspicious access detected.', { status: 403 })
@@ -97,7 +107,6 @@ export function middleware(req: NextRequest) {
         ipAccessMap.set(ip, { count: 1, lastTime: now })
     }
 
-    // 管理画面保護
     if (url.startsWith('/admin')) {
         const cookie = req.cookies.get('admin_auth')
         if (cookie?.value !== 'true') {
@@ -108,7 +117,17 @@ export function middleware(req: NextRequest) {
         }
     }
 
-    // 正常アクセス（200）
+    if (url === '/redirect') {
+        const toParam = req.nextUrl.searchParams.get('to') || ''
+        if (!isSafeExternalUrl(toParam, req.nextUrl.origin)) {
+            const home = req.nextUrl.clone()
+            home.pathname = '/'
+            home.search = ''
+            logAccess(req.nextUrl.origin, ip, url, 302)
+            return NextResponse.redirect(home)
+        }
+    }
+
     logAccess(req.nextUrl.origin, ip, url, 200)
     return NextResponse.next()
 }
