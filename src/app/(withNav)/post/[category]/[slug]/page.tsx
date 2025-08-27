@@ -7,12 +7,50 @@ import rehypeSlug from 'rehype-slug'
 import Slugger from 'github-slugger'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
-import { visit } from 'unist-util-visit'
-import type { Root, Heading as MdHeading, PhrasingContent } from 'mdast'
+import { visit, SKIP } from 'unist-util-visit'
+
+import type { Root, Heading as MdHeading, PhrasingContent, Paragraph, Text, Link, Image } from 'mdast'
+import type { Parent } from 'unist'
 import remarkGfm from 'remark-gfm'
+import React from 'react'
+import SNSsection from '@/components/toppage/SNSsection'
 
 type RouteParams = { category: string; slug: string }
 type Props = { params: Promise<RouteParams> }
+
+function remarkUnwrapStandaloneLinksAndImages() {
+    return (tree: Root) => {
+        visit(tree, 'paragraph', (node: Paragraph, index, parent: Parent | undefined) => {
+            if (!parent || typeof index !== 'number') return
+
+            const meaningful = node.children.filter((c) => {
+                if (c.type === 'text') return /\S/.test((c as Text).value || '')
+                return true
+            })
+
+            const allImages =
+                meaningful.length > 0 && meaningful.every((c) => c.type === 'image' || c.type === 'imageReference')
+
+            if (allImages) {
+                parent.children.splice(index, 1, ...meaningful)
+                return SKIP
+            }
+
+            if (meaningful.length === 1 && meaningful[0].type === 'link') {
+                parent.children.splice(index, 1, meaningful[0] as Link)
+                return SKIP
+            }
+
+            if (
+                meaningful.length === 1 &&
+                (meaningful[0].type === 'image' || meaningful[0].type === 'imageReference')
+            ) {
+                parent.children.splice(index, 1, meaningful[0] as Image)
+                return SKIP
+            }
+        })
+    }
+}
 
 export default async function Page({ params }: Props) {
     const { category: categorySlug, slug } = await params
@@ -29,6 +67,7 @@ export default async function Page({ params }: Props) {
         if (node.depth !== 2 && node.depth !== 3) return
         const text = node.children
             .map((c: PhrasingContent) => ('value' in c ? String(c.value) : ''))
+
             .join('')
             .trim()
         if (!text) return
@@ -44,17 +83,15 @@ export default async function Page({ params }: Props) {
 
     const urlTransform = (uri: string) => {
         if (uri.startsWith('http')) return uri
-
-        let relativePath = uri.startsWith('./') ? uri.slice(2) : uri
+        const relativePath = uri.startsWith('./') ? uri.slice(2) : uri
         const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']
         const isImage = imageExtensions.some((ext) => relativePath.toLowerCase().endsWith(ext))
-
         return isImage ? `/api/images/${categorySlug}/${relativePath}` : `/post/${categorySlug}/${relativePath}`
     }
 
     return (
         <article className="flex flex-col container mx-auto lg:flex-row gap-8 min-h-screen">
-            <div className="flex-1 bg-white p-6 sm:p-10 md:p-12 rounded-xl shadow-sm">
+            <div className="flex-1 bg-white p-6 sm:p-10 md:p-12 mx-2 md:mx-0 rounded-xl shadow-sm">
                 <Breadcrumbs items={breadcrumbItems} />
 
                 <div className="mt-6 mb-10 border-b border-blue-200 pb-6">
@@ -78,44 +115,61 @@ export default async function Page({ params }: Props) {
                     )}
                 </div>
 
-                <div className="prose prose-blue sm:prose-base lg:prose-lg max-w-none">
+                <div className="prose prose-blue pb-12 sm:prose-base lg:prose-lg max-w-none">
                     <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
+                        remarkPlugins={[remarkGfm, remarkUnwrapStandaloneLinksAndImages]}
                         rehypePlugins={[rehypeHighlight, rehypeSlug]}
                         urlTransform={urlTransform}
                         components={{
                             h2: ({ className, ...props }) => (
                                 <h2
                                     {...props}
-                                    className={`scroll-mt-24 text-2xl sm:text-3xl font-bold mt-12 mb-4 pb-2 border-b-2 border-blue-200/80 text-blue-800 ${className ?? ''}`}
+                                    className={`scroll-mt-24 text-2xl sm:text-3xl font-bold mt-4 md:mt-12 mb-4 pb-2 border-b-2 border-blue-200/80 text-blue-800 ${className ?? ''}`}
                                 />
                             ),
                             h3: ({ className, ...props }) => (
                                 <h3
                                     {...props}
-                                    className={`scroll-mt-24 text-xl sm:text-2xl font-semibold mt-10 mb-3 text-blue-800 ${className ?? ''}`}
+                                    className={`scroll-mt-24 text-xl sm:text-2xl font-semibold mt-3 md:mt-10 mb-3 text-blue-800 border-l-4 border-blue-800 pl-3 ${className ?? ''}`}
                                 />
                             ),
-                            p: (props) => (
-                                <p
-                                    className="leading-relaxed text-slate-800 text-lg break-all sm:break-words"
-                                    {...props}
-                                />
-                            ),
+
+                            p: ({ children, ...props }) => {
+                                const childArray = React.Children.toArray(children).filter((c) => {
+                                    if (typeof c === 'string') return /\S/.test(c)
+                                    return true
+                                })
+
+                                if (childArray.length === 1 && React.isValidElement(childArray[0])) {
+                                    const only = childArray[0] as React.ReactElement
+                                    if (only.type === 'img' || only.type === 'a') return only
+                                }
+
+                                return (
+                                    <p
+                                        className="leading-relaxed text-slate-800 text-lg break-all sm:break-words my-2"
+                                        {...props}
+                                    >
+                                        {'　'}
+                                        {children}
+                                    </p>
+                                )
+                            },
                             a: ({ href = '', ...props }) => (
                                 <a
                                     href={href}
                                     target={href.startsWith('http') ? '_blank' : undefined}
                                     rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                                    className="text-blue-600 hover:text-blue-800 underline font-medium transition-colors"
+                                    className="block mb-1 text-blue-600 hover:text-blue-800 underline font-medium transition-colors break-words"
                                     {...props}
                                 />
                             ),
                             ul: (props) => <ul className="list-disc pl-6 mt-4 space-y-2" {...props} />,
                             ol: (props) => <ol className="list-decimal pl-6 mt-4 space-y-2" {...props} />,
-                            img: (props) => (
+                            img: ({ alt, ...props }) => (
                                 <img
-                                    className="h-auto max-h-[80vh] w-auto mx-auto my-5 rounded-lg shadow-md border border-blue-100"
+                                    alt={typeof alt === 'string' ? alt : ''}
+                                    className="max-h-[80vh] w-auto mx-auto my-4 rounded-lg shadow-md border border-blue-100"
                                     {...props}
                                 />
                             ),
@@ -125,7 +179,6 @@ export default async function Page({ params }: Props) {
                                     {...props}
                                 />
                             ),
-                            // 横スクロール用のコンテナで包んで、長い行でも画面幅を超えたらスクロールできるようにする
                             pre: ({ className, ...props }) => (
                                 <div className="w-full overflow-x-auto">
                                     <pre
@@ -135,7 +188,6 @@ export default async function Page({ params }: Props) {
                                 </div>
                             ),
                             hr: (props) => <hr className="my-10 border-t-2 border-blue-100" {...props} />,
-                            // テーブルは必ずラッパーでoverflow-x-auto。table本体にmin-wを与えて横スクロールを発生させる
                             table: ({ className, ...props }) => (
                                 <div className="w-full overflow-x-auto">
                                     <table
@@ -154,6 +206,7 @@ export default async function Page({ params }: Props) {
                         {postData.content}
                     </ReactMarkdown>
                 </div>
+                <SNSsection title="フォローする ฅ^•ω•^ฅ♡" grayBg={false} useAnimation={false} />
             </div>
 
             <aside className="w-64 flex-shrink-0">
@@ -174,7 +227,7 @@ export async function generateMetadata({ params }: Props) {
             ? cover
             : cover
               ? `/api/images/${categorySlug}/${cover.replace(/^\.?\//, '')}`
-              : undefined
+              : 'image/ogp.jpg'
 
     return {
         title,
@@ -183,7 +236,7 @@ export async function generateMetadata({ params }: Props) {
         openGraph: {
             title,
             description,
-            images: coverUrl ? [{ url: coverUrl }] : undefined,
+            images: [{ url: coverUrl }],
         },
     }
 }

@@ -7,7 +7,6 @@ export default function ScrollToTop() {
     const pathname = usePathname()
 
     useEffect(() => {
-        // ページ遷移ごとにスクロール位置をリセットする
         window.scrollTo(0, 0)
     }, [pathname])
 

@@ -1,4 +1,3 @@
-// src/components/toppage/SNSsection.tsx
 'use client'
 
 import React, { useEffect, useRef } from 'react'
@@ -9,7 +8,6 @@ import Image from 'next/image'
 
 gsap.registerPlugin(ScrollTrigger)
 
-// 画像は /public/image/sns/* に置いて、パスは /image/sns/xxx.png で指定する
 type IconId = 'x' | 'github' | 'booth' | 'dlsite' | 'circlems' | 'pixiv'
 type SnsItem = { id: IconId; name: string; href: string; icon?: string; imgSrc?: string }
 
@@ -34,37 +32,45 @@ const DEFAULT_ITEMS: SnsItem[] = [
 
 type Props = {
     items?: SnsItem[]
+    title?: string // 見出しテキスト。未指定なら「各種リンク」
+    grayBg?: boolean // 背景をgray-50にするか。未指定ならtrue
+    useAnimation?: boolean // GSAPアニメーションを使うか。未指定ならtrue
 }
 
 const ICON_SIZE = 64
 const TILE_SIZE = 96
 
-const SNSsection: React.FC<Props> = ({ items = DEFAULT_ITEMS }) => {
+const SNSsection: React.FC<Props> = ({
+    items = DEFAULT_ITEMS,
+    title = '各種リンク',
+    grayBg = true,
+    useAnimation = true,
+}) => {
     const sectionRef = useRef<HTMLElement | null>(null)
 
     useEffect(() => {
+        if (!useAnimation) return
         if (!sectionRef.current) return
 
-        const title = sectionRef.current.querySelector<HTMLElement>('#sns-heading')
+        const titleEl = sectionRef.current.querySelector<HTMLElement>('#sns-heading')
         const nodes = sectionRef.current.querySelectorAll<HTMLElement>('[data-sns-item]')
-        if (!title && !nodes.length) return
+        if (!titleEl && !nodes.length) return
 
         const tl = gsap.timeline({
             scrollTrigger: { trigger: sectionRef.current, start: 'top 70%', toggleActions: 'play none none none' },
         })
 
-        if (title) tl.from(title, { opacity: 0, y: 18, duration: 0.6, ease: 'power2.out' })
+        if (titleEl) tl.from(titleEl, { opacity: 0, y: 18, duration: 0.6, ease: 'power2.out' })
         if (nodes.length)
             tl.from(nodes, { opacity: 0, y: 18, stagger: 0.12, duration: 0.6, ease: 'power2.out' }, '-=0.1')
 
         return () => {
             tl.kill()
-            ScrollTrigger.getAll().forEach((st) => st.kill())
+            if (tl.scrollTrigger) tl.scrollTrigger.kill()
         }
-    }, [])
+    }, [useAnimation])
 
     const renderVisual = (item: SnsItem) => {
-        // 優先度: imgSrc > icon > プレースホルダ。imgSrc は next/image で最適化
         if (item.imgSrc) {
             return (
                 <Image
@@ -86,12 +92,12 @@ const SNSsection: React.FC<Props> = ({ items = DEFAULT_ITEMS }) => {
     return (
         <section
             ref={sectionRef}
-            className="min-h-[30vh] bg-gray-50 flex items-center justify-center"
+            className={`min-h-[30vh] ${grayBg ? 'bg-gray-50' : 'bg-transparent'} flex items-center justify-center`}
             aria-labelledby="sns-heading"
         >
             <div className="max-w-4xl w-full px-6">
                 <h2 id="sns-heading" className="text-[clamp(20px,4vw,48px)] font-bold text-black text-center mb-4">
-                    各種リンク
+                    {title}
                 </h2>
                 <ul className="flex flex-wrap gap-6 justify-center items-center">
                     {items.map((item) => (

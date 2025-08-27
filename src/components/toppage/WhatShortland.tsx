@@ -15,24 +15,32 @@ const WhatShortland = () => {
         const ctx = gsap.context(() => {
             const triggerEl = sectionRef.current as HTMLDivElement
 
-            // 見出しと本文テキストを順にフェードアップ（SNSと同じ流れ）。1回だけ発火
+            const lines = triggerEl.querySelectorAll<SVGPathElement>('.draw-line')
+            lines.forEach((line) => {
+                const length = line.getTotalLength()
+                gsap.set(line, { strokeDasharray: length, strokeDashoffset: length })
+            })
+
             const textEls = triggerEl.querySelectorAll<HTMLElement>('.fade-up h2, .fade-up p')
             const items = triggerEl.querySelectorAll<HTMLElement>('.fade-up.grid > div')
 
             const tl = gsap.timeline({
                 scrollTrigger: {
                     trigger: triggerEl,
-                    start: 'top 50%',
+                    start: 'top 45%',
                     toggleActions: 'play none none none',
                     once: true,
                 },
             })
 
+            if (lines.length) {
+                tl.to(lines, { strokeDashoffset: 0, duration: 1.0, ease: 'power2.out', stagger: 0.2 })
+            }
             if (textEls.length) {
-                tl.from(textEls, { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out', stagger: 0.15 })
+                tl.from(textEls, { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out', stagger: 0.15 }, '>-0.7')
             }
             if (items.length) {
-                tl.from(items, { opacity: 0, y: 18, duration: 0.6, ease: 'power2.out', stagger: 0.12 }, '-=0.1')
+                tl.from(items, { opacity: 0, y: 18, duration: 0.6, ease: 'power2.out', stagger: 0.12 }, '>-0.5')
             }
         }, sectionRef)
         return () => ctx.revert()
@@ -68,7 +76,6 @@ const WhatShortland = () => {
             ref={sectionRef}
             className="relative flex flex-col items-center min-h-[80vh] overflow-hidden bg-gradient-to-b from-sky-700 via-sky-200 to-gray-50 text-center px-6"
         >
-            {/* グラデーションはセクションのTailwind背景を維持。SVGは装飾ラインのみ */}
             <svg
                 className="bg-parallax pointer-events-none absolute inset-0 w-full h-full"
                 viewBox="0 0 1000 600"
@@ -76,7 +83,6 @@ const WhatShortland = () => {
                 aria-hidden="true"
             >
                 <defs>
-                    {/* ラインをやわらかく光らせる */}
                     <filter id="glow">
                         <feGaussianBlur stdDeviation="4" result="blur" />
                         <feMerge>
@@ -86,7 +92,6 @@ const WhatShortland = () => {
                     </filter>
                 </defs>
 
-                {/* うねるライン */}
                 <g filter="url(#glow)" opacity="0.9">
                     <path
                         className="draw-line"
