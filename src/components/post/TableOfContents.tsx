@@ -106,7 +106,7 @@ export default function TableOfContents({ headings }: Props) {
 
     return (
         <>
-            <nav aria-label="Table of contents" className="hidden lg:block">
+            <nav aria-label="Table of contents">
                 {/* PC向けの「トップへ戻る」パネル */}
                 <div
                     className={`overflow-hidden transition-all duration-500 ${

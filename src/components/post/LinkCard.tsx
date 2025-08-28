@@ -108,8 +108,10 @@ export function LinkCard({ href }: { href: string }) {
                     {data.hostname}
                 </div>
             )}
-            <div className="min-w-0 flex-1">
-                <div className="text-base font-semibold leading-snug truncate">{data.title || href}</div>
+            <div className="min-w-0 basis-0 flex-1">
+                <div className="text-base font-semibold leading-snug line-clamp-2 break-words">
+                    {data.title || href}
+                </div>
                 {data.description ? (
                     <p className="mt-1 text-sm text-gray-600 line-clamp-2 break-words">{data.description}</p>
                 ) : null}
