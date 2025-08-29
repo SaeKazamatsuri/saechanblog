@@ -200,6 +200,8 @@ async function runRestart(
 
     const env = buildEnvForPm2(pm2CmdAbs)
 
+    env.LOG_DIR = '/home/koeda_pi/Desktop/saechanblog/log/access'
+
     const okRestart = await runStep(`${name}-restart`, pm2CmdAbs, ['restart', appName, '--update-env'], cwd, write, env)
     if (!okRestart) return false
 
