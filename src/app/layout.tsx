@@ -27,7 +27,7 @@ export const metadata: Metadata = {
         type: 'website',
         siteName: 'ショートランドのこかげ',
         title: 'ショートランドのこかげ',
-        description: '風祭小枝のブログ',
+        description: '風祭小枝のブログ。主にサークル「ショートランドのこかげ」の宣伝をおこないます。',
         images: ['/image/ogp.jpg'],
         locale: 'ja_JP',
     },

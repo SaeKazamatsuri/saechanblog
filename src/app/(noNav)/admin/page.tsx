@@ -20,6 +20,12 @@ export default function Page() {
                 >
                     編集・削除
                 </Link>
+                <Link
+                    href="./admin/analytics"
+                    className="px-12 py-6 rounded border text-base font-medium text-white bg-black hover:opacity-90 transition"
+                >
+                    アナリティクス
+                </Link>
             </div>
         </main>
     )
