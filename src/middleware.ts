@@ -130,7 +130,7 @@ function shouldSkipByDedupe(sig: string, now: number) {
     return false
 }
 
-function sendAccessLog(
+async function sendAccessLog(
     origin: string,
     payload: {
         ip: string
@@ -142,7 +142,7 @@ function sendAccessLog(
         method: string
     }
 ) {
-    return fetch(`${origin}/api/log`, {
+    return await fetch(`${origin}/api/log`, {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +164,7 @@ export async function middleware(req: NextRequest) {
         const status = 403
         const sig = makeSig(ip, method, url, status)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            void (await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
@@ -172,7 +172,7 @@ export async function middleware(req: NextRequest) {
                 redirectTo: redirectToForLog,
                 userAgent,
                 method,
-            }).catch(() => {})
+            }).catch(() => {}))
         }
         return new NextResponse('Forbidden: PHP access blocked.', { status })
     }
@@ -182,7 +182,7 @@ export async function middleware(req: NextRequest) {
         const status = 403
         const sig = makeSig(ip, method, url, status)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            void (await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
@@ -190,7 +190,7 @@ export async function middleware(req: NextRequest) {
                 redirectTo: redirectToForLog,
                 userAgent,
                 method,
-            }).catch(() => {})
+            }).catch(() => {}))
         }
         return new NextResponse('Forbidden: Suspicious access detected.', { status })
     }
@@ -203,7 +203,7 @@ export async function middleware(req: NextRequest) {
                 const status = 429
                 const sig = makeSig(ip, method, url, status)
                 if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                    void sendAccessLog(origin, {
+                    void (await sendAccessLog(origin, {
                         ip,
                         url,
                         time: isoTime,
@@ -211,7 +211,7 @@ export async function middleware(req: NextRequest) {
                         redirectTo: redirectToForLog,
                         userAgent,
                         method,
-                    }).catch(() => {})
+                    }).catch(() => {}))
                 }
                 return new NextResponse('Too many requests (Rate limit exceeded)', { status })
             }
@@ -230,7 +230,7 @@ export async function middleware(req: NextRequest) {
             const status = 302
             const sig = makeSig(ip, method, url, status)
             if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                void sendAccessLog(origin, {
+                void (await sendAccessLog(origin, {
                     ip,
                     url,
                     time: isoTime,
@@ -238,7 +238,7 @@ export async function middleware(req: NextRequest) {
                     redirectTo: redirectToForLog,
                     userAgent,
                     method,
-                }).catch(() => {})
+                }).catch(() => {}))
             }
             return NextResponse.redirect(redirectUrl)
         }
@@ -254,7 +254,7 @@ export async function middleware(req: NextRequest) {
             const status = 302
             const sig = makeSig(ip, method, url, status, redirectToForLog)
             if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                void sendAccessLog(origin, {
+                void (await sendAccessLog(origin, {
                     ip,
                     url,
                     time: isoTime,
@@ -262,7 +262,7 @@ export async function middleware(req: NextRequest) {
                     redirectTo: redirectToForLog,
                     userAgent,
                     method,
-                }).catch(() => {})
+                }).catch(() => {}))
             }
             return NextResponse.redirect(home)
         }
@@ -272,7 +272,7 @@ export async function middleware(req: NextRequest) {
         const status = 200
         const sig = makeSig(ip, method, url, status, redirectToForLog)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            void (await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
@@ -280,7 +280,7 @@ export async function middleware(req: NextRequest) {
                 redirectTo: redirectToForLog,
                 userAgent,
                 method,
-            }).catch(() => {})
+            }).catch(() => {}))
         }
     }
 
