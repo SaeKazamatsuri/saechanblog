@@ -22,15 +22,6 @@ function getTodayJst() {
     return ymd
 }
 
-async function ensureHeader(filePath: string) {
-    try {
-        await fs.access(filePath)
-    } catch {
-        const header = ['time', 'ip', 'url', 'status', 'redirectTo', 'userAgent', 'method'].join(',') + '\n'
-        await fs.writeFile(filePath, header, { flag: 'wx' })
-    }
-}
-
 async function pathExists(p: string) {
     try {
         await fs.access(p)
@@ -94,8 +85,6 @@ export async function POST(req: NextRequest) {
 
         const today = getTodayJst()
         const logFile = path.join(logDir, `${today}.csv`)
-
-        await ensureHeader(logFile)
 
         const row =
             [
