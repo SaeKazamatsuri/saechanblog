@@ -42,6 +42,9 @@ async function appendWithFallback(filePath: string, data: string) {
         const fallback = '/tmp/saechanblog_access_error.log'
         const stamp = new Date().toISOString()
         const block = `[${stamp}] append failed\nfile: ${filePath}\nerror: ${msg}\n\n`
+
+        console.error('appendFile error:', msg, 'filePath:', filePath)
+
         try {
             fs.appendFileSync(fallback, block, { encoding: 'utf8' })
         } catch {}
