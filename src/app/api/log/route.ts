@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
-import fs from 'fs/promises'
+import { promises as fsp } from 'fs'
+import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 function csvEscape(value: unknown) {
     const s = value === undefined || value === null ? '' : String(value)
@@ -25,48 +26,27 @@ function getTodayJst() {
     return `${y}-${m}-${d}`
 }
 
-async function pathExists(p: string) {
-    try {
-        await fs.access(p)
-        return true
-    } catch {
-        return false
-    }
+function resolveLogDir() {
+    const cwd = process.cwd()
+    const raw = process.env.LOG_DIR?.trim()
+    if (raw && raw.length > 0) return path.isAbsolute(raw) ? raw : path.join(cwd, raw)
+    return path.join(cwd, 'log', 'access')
 }
 
-let cachedProjectRoot: string | undefined
-
-async function resolveProjectRoot() {
-    if (cachedProjectRoot) return cachedProjectRoot
-    if (process.env.PROJECT_ROOT && process.env.PROJECT_ROOT.trim() !== '') {
-        cachedProjectRoot = process.env.PROJECT_ROOT
-        return cachedProjectRoot
-    }
-    let dir = process.cwd()
-    for (let i = 0; i < 10; i++) {
-        if (await pathExists(path.join(dir, 'package.json'))) {
-            cachedProjectRoot = dir
-            return cachedProjectRoot
-        }
-        const parent = path.dirname(dir)
-        if (parent === dir) break
-        dir = parent
-    }
+async function appendWithFallback(filePath: string, data: string) {
     try {
-        const thisDir = path.dirname(fileURLToPath(import.meta.url))
-        dir = thisDir
-        for (let i = 0; i < 10; i++) {
-            if (await pathExists(path.join(dir, 'package.json'))) {
-                cachedProjectRoot = dir
-                return cachedProjectRoot
-            }
-            const parent = path.dirname(dir)
-            if (parent === dir) break
-            dir = parent
-        }
-    } catch {}
-    cachedProjectRoot = process.cwd()
-    return cachedProjectRoot
+        await fsp.appendFile(filePath, data, { encoding: 'utf8' })
+        return
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        const fallback = '/tmp/saechanblog_access_error.log'
+        const stamp = new Date().toISOString()
+        const block = `[${stamp}] append failed\nfile: ${filePath}\nerror: ${msg}\n\n`
+        try {
+            fs.appendFileSync(fallback, block, { encoding: 'utf8' })
+        } catch {}
+        throw e
+    }
 }
 
 export async function POST(req: NextRequest) {
@@ -82,15 +62,8 @@ export async function POST(req: NextRequest) {
         const userAgent = sanitize(b.userAgent)
         const method = sanitize(b.method)
 
-        const projectRoot = await resolveProjectRoot()
-        const envLogDir =
-            process.env.LOG_DIR && process.env.LOG_DIR.trim() !== '' ? process.env.LOG_DIR.trim() : undefined
-        const logDir = envLogDir
-            ? path.isAbsolute(envLogDir)
-                ? envLogDir
-                : path.join(projectRoot, envLogDir)
-            : path.join(projectRoot, 'log', 'access')
-        await fs.mkdir(logDir, { recursive: true })
+        const logDir = resolveLogDir()
+        await fsp.mkdir(logDir, { recursive: true })
 
         const today = getTodayJst()
         const logFile = path.join(logDir, `${today}.csv`)
@@ -106,10 +79,12 @@ export async function POST(req: NextRequest) {
                 csvEscape(method),
             ].join(',') + '\n'
 
-        await fs.appendFile(logFile, row, { encoding: 'utf8' })
+        await appendWithFallback(logFile, row)
 
         const devPayload =
-            process.env.NODE_ENV === 'production' ? { success: true } : { success: true, logDir, logFile, projectRoot }
+            process.env.NODE_ENV === 'production'
+                ? { success: true }
+                : { success: true, logDir, logFile, cwd: process.cwd() }
         return new Response(JSON.stringify(devPayload), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
