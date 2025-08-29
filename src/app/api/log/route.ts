@@ -85,11 +85,16 @@ export async function POST(req: NextRequest) {
             process.env.NODE_ENV === 'production'
                 ? { success: true }
                 : { success: true, logDir, logFile, cwd: process.cwd() }
+
+        console.log('logFile:', logFile)
+
         return new Response(JSON.stringify(devPayload), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         })
     } catch (e: unknown) {
+        console.error('appendFile error:', e)
+
         const message = e instanceof Error ? e.message : String(e)
         return new Response(JSON.stringify({ success: false, error: message }), {
             status: 500,
