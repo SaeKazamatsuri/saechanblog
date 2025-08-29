@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const ipAccessMap = new Map<string, { count: number; lastTime: number }>()
-
 const RATE_LIMIT = 300
 const WINDOW_MS = 60 * 1000
 
@@ -43,22 +41,55 @@ const blockedPaths = [
     'scripts/nodemailer.js',
 ]
 
-function logAccess(
-    origin: string,
-    ip: string,
-    url: string,
-    status: number,
-    userAgent: string,
-    method: string,
-    redirectTo?: string
-) {
-    const isoTime = new Date().toISOString()
-    fetch(`${origin}/api/log`, {
-        method: 'POST',
-        body: JSON.stringify({ ip, url, time: isoTime, status, redirectTo, userAgent, method }),
-        headers: { 'Content-Type': 'application/json' },
-        keepalive: true,
-    }).catch(() => {})
+const IGNORE_PREFIXES = ['/image']
+const IGNORE_EXTENSIONS = [
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.svg',
+    '.gif',
+    '.ico',
+    '.bmp',
+    '.avif',
+    '.css',
+    '.js',
+    '.mjs',
+    '.map',
+    '.txt',
+    '.xml',
+    '.woff',
+    '.woff2',
+    '.ttf',
+    '.otf',
+    '.eot',
+    '.mp4',
+    '.webm',
+    '.mp3',
+    '.wav',
+    '.json',
+]
+const IGNORE_REGEXPS: RegExp[] = []
+
+const DEDUPE_MS = 1000
+const LOG_TIMEOUT_MS = 300
+const ipAccessMap = new Map<string, { count: number; lastTime: number }>()
+const dedupeMap = new Map<string, number>()
+
+function firstIpFromHeader(v: string | null): string | undefined {
+    if (!v) return undefined
+    const first = v.split(',')[0]?.trim()
+    return first || undefined
+}
+
+function getClientIp(req: NextRequest) {
+    return (
+        firstIpFromHeader(req.headers.get('x-client-ip')) ||
+        firstIpFromHeader(req.headers.get('cf-connecting-ip')) ||
+        firstIpFromHeader(req.headers.get('x-real-ip')) ||
+        firstIpFromHeader(req.headers.get('x-forwarded-for')) ||
+        'unknown'
+    )
 }
 
 function isSafeExternalUrl(to: string, origin: string) {
@@ -72,23 +103,88 @@ function isSafeExternalUrl(to: string, origin: string) {
     }
 }
 
-export function middleware(req: NextRequest) {
+function shouldIgnorePath(pathname: string) {
+    for (const p of IGNORE_PREFIXES) {
+        if (pathname.startsWith(p)) return true
+    }
+    for (const ext of IGNORE_EXTENSIONS) {
+        if (pathname.toLowerCase().endsWith(ext)) return true
+    }
+    for (const re of IGNORE_REGEXPS) {
+        if (re.test(pathname)) return true
+    }
+    return false
+}
+
+function makeSig(ip: string, method: string, url: string, status: number, redirectTo?: string) {
+    return `${ip}|${method}|${url}|${status}|${redirectTo ?? ''}`
+}
+
+function shouldSkipByDedupe(sig: string, now: number) {
+    const last = dedupeMap.get(sig)
+    if (last && now - last < DEDUPE_MS) return true
+    dedupeMap.set(sig, now)
+    if (dedupeMap.size > 5000) {
+        const cutoff = now - DEDUPE_MS
+        for (const [k, v] of dedupeMap) if (v < cutoff) dedupeMap.delete(k)
+    }
+    return false
+}
+
+async function logAccess(
+    origin: string,
+    payload: {
+        ip: string
+        url: string
+        time: string
+        status: number
+        redirectTo?: string
+        userAgent: string
+        method: string
+    }
+) {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), LOG_TIMEOUT_MS)
+    try {
+        await fetch(`${origin}/api/log`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+        })
+    } catch {
+    } finally {
+        clearTimeout(id)
+    }
+}
+
+export async function middleware(req: NextRequest) {
     const now = Date.now()
-    const ipRaw = req.headers.get('x-forwarded-for') ?? 'unknown'
-    const ip = ipRaw.split(',')[0].trim()
+    const ip = getClientIp(req)
     const url = req.nextUrl.pathname
+    const origin = req.nextUrl.origin
     const userAgent = req.headers.get('user-agent') ?? ''
     const method = req.method
+    const isoTime = new Date().toISOString()
     let redirectToForLog: string | undefined
 
     if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
-        logAccess(req.nextUrl.origin, ip, url, 403, userAgent, method)
-        return new NextResponse('Forbidden: PHP access blocked.', { status: 403 })
+        const status = 403
+        const sig = makeSig(ip, method, url, status)
+        if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+            await logAccess(origin, { ip, url, time: isoTime, status, redirectTo: redirectToForLog, userAgent, method })
+        }
+        return new NextResponse('Forbidden: PHP access blocked.', { status })
     }
 
-    if (blockedPaths.some((blocked) => url.includes(blocked))) {
-        logAccess(req.nextUrl.origin, ip, url, 403, userAgent, method)
-        return new NextResponse('Forbidden: Suspicious access detected.', { status: 403 })
+    const lowerUrl = url.toLowerCase()
+    if (blockedPaths.some((blocked) => lowerUrl.includes(blocked.toLowerCase()))) {
+        const status = 403
+        const sig = makeSig(ip, method, url, status)
+        if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+            await logAccess(origin, { ip, url, time: isoTime, status, redirectTo: redirectToForLog, userAgent, method })
+        }
+        return new NextResponse('Forbidden: Suspicious access detected.', { status })
     }
 
     const record = ipAccessMap.get(ip)
@@ -96,8 +192,20 @@ export function middleware(req: NextRequest) {
         if (now - record.lastTime < WINDOW_MS) {
             record.count++
             if (record.count > RATE_LIMIT) {
-                logAccess(req.nextUrl.origin, ip, url, 429, userAgent, method)
-                return new NextResponse('Too many requests (Rate limit exceeded)', { status: 429 })
+                const status = 429
+                const sig = makeSig(ip, method, url, status)
+                if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+                    await logAccess(origin, {
+                        ip,
+                        url,
+                        time: isoTime,
+                        status,
+                        redirectTo: redirectToForLog,
+                        userAgent,
+                        method,
+                    })
+                }
+                return new NextResponse('Too many requests (Rate limit exceeded)', { status })
             }
         } else {
             ipAccessMap.set(ip, { count: 1, lastTime: now })
@@ -111,7 +219,19 @@ export function middleware(req: NextRequest) {
         if (cookie?.value !== 'true') {
             const redirectUrl = req.nextUrl.clone()
             redirectUrl.pathname = '/'
-            logAccess(req.nextUrl.origin, ip, url, 302, userAgent, method)
+            const status = 302
+            const sig = makeSig(ip, method, url, status)
+            if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+                await logAccess(origin, {
+                    ip,
+                    url,
+                    time: isoTime,
+                    status,
+                    redirectTo: redirectToForLog,
+                    userAgent,
+                    method,
+                })
+            }
             return NextResponse.redirect(redirectUrl)
         }
     }
@@ -119,16 +239,35 @@ export function middleware(req: NextRequest) {
     if (url === '/redirect') {
         const toParam = req.nextUrl.searchParams.get('to') || ''
         redirectToForLog = toParam
-        if (!isSafeExternalUrl(toParam, req.nextUrl.origin)) {
+        if (!isSafeExternalUrl(toParam, origin)) {
             const home = req.nextUrl.clone()
             home.pathname = '/'
             home.search = ''
-            logAccess(req.nextUrl.origin, ip, url, 302, userAgent, method, toParam)
+            const status = 302
+            const sig = makeSig(ip, method, url, status, redirectToForLog)
+            if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+                await logAccess(origin, {
+                    ip,
+                    url,
+                    time: isoTime,
+                    status,
+                    redirectTo: redirectToForLog,
+                    userAgent,
+                    method,
+                })
+            }
             return NextResponse.redirect(home)
         }
     }
 
-    logAccess(req.nextUrl.origin, ip, url, 200, userAgent, method, redirectToForLog)
+    {
+        const status = 200
+        const sig = makeSig(ip, method, url, status, redirectToForLog)
+        if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
+            await logAccess(origin, { ip, url, time: isoTime, status, redirectTo: redirectToForLog, userAgent, method })
+        }
+    }
+
     return NextResponse.next()
 }
 

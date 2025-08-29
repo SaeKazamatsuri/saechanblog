@@ -22,8 +22,8 @@ export default function RedirectPage({ to }: Props) {
     }, [safe])
 
     const handleCancel = useCallback(() => {
-        if (window.opener) window.close()
-        else window.history.back()
+        window.close()
+        window.history.back()
     }, [])
 
     return (

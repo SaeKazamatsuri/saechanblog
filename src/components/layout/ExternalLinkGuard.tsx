@@ -27,6 +27,7 @@ export default function ExternalLinkGuard() {
             const to = `/redirect?to=${encodeURIComponent(u.toString())}`
             a.setAttribute('href', to)
             a.setAttribute('rel', 'noopener noreferrer')
+            a.setAttribute('target', '_blank')
         }
     }, [pathname])
     return null
