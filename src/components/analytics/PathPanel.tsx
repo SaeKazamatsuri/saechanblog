@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { usePath } from './useApi'
+import { usePath, PathResponse } from './useApi'
 import { PathsBar } from './charts/PathsBar'
 
 type Props = { range: { date?: string; from?: string; to?: string } }
@@ -7,7 +7,7 @@ type Props = { range: { date?: string; from?: string; to?: string } }
 export function PathPanel({ range }: Props) {
     const [top, setTop] = useState(20)
     const { data, isLoading } = usePath(range, top)
-    const items = useMemo(() => data?.items || [], [data])
+    const items = useMemo(() => (data?.items ?? []) as PathResponse['items'], [data])
     if (isLoading) return <div className="text-gray-500">Loading...</div>
     return (
         <div className="space-y-4">
@@ -35,7 +35,7 @@ export function PathPanel({ range }: Props) {
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((x: any) => (
+                        {items.map((x) => (
                             <tr key={x.path} className="border-t">
                                 <td className="py-2 pr-4 font-mono">{x.path}</td>
                                 <td className="py-2">{x.count}</td>

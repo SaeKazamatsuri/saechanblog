@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { StatCard } from './StatCard'
-import { useSummary } from './useApi'
+import { useSummary, SummaryResponse } from './useApi'
 import { StatusDoughnut } from './charts/StatusDoughnut'
 import { MethodBar } from './charts/MethodBar'
 
@@ -8,17 +8,27 @@ type Props = { range: { date?: string; from?: string; to?: string } }
 
 export function SummaryPanel({ range }: Props) {
     const { data, isLoading } = useSummary(range)
+
     const statusData = useMemo(() => {
-        if (!data) return { labels: [], counts: [] }
-        const entries = Object.entries(data.byStatus || {})
-        return { labels: entries.map((e) => e[0]), counts: entries.map((e) => e[1]) }
+        const src = (data?.byStatus ?? {}) as SummaryResponse['byStatus']
+        const entries = Object.entries(src)
+        return {
+            labels: entries.map(([k]) => k),
+            counts: entries.map(([, v]) => Number(v)),
+        }
     }, [data])
+
     const methodData = useMemo(() => {
-        if (!data) return { labels: [], counts: [] }
-        const entries = Object.entries(data.byMethod || {})
-        return { labels: entries.map((e) => e[0]), counts: entries.map((e) => e[1]) }
+        const src = (data?.byMethod ?? {}) as SummaryResponse['byMethod']
+        const entries = Object.entries(src)
+        return {
+            labels: entries.map(([k]) => k),
+            counts: entries.map(([, v]) => Number(v)),
+        }
     }, [data])
+
     if (isLoading) return <div className="text-gray-500">Loading...</div>
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -46,7 +56,7 @@ export function SummaryPanel({ range }: Props) {
                         </tr>
                     </thead>
                     <tbody>
-                        {data?.topPaths?.map((x: any) => (
+                        {(data?.topPaths ?? []).map((x) => (
                             <tr key={x.path} className="border-t">
                                 <td className="py-2 pr-4 font-mono">{x.path}</td>
                                 <td className="py-2">{x.count}</td>
