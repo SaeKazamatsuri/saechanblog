@@ -1,68 +1,76 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react' // マウント検知と開閉状態
-import { createPortal } from 'react-dom' // 黒背景とメニューをbody直下に出すため
-import Link from 'next/link' // ルーティング
-import { Icon } from '@iconify/react' // アイコン
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import Link from 'next/link'
+import { Icon } from '@iconify/react'
+import { usePathname } from 'next/navigation'
 
-// カテゴリ型
 type Category = {
     displayName: string
     slug: string
 }
 
-// 受け取りProps
 type Props = {
     categories: Category[]
 }
 
 export default function HeaderNav({ categories }: Props) {
-    const [mounted, setMounted] = useState(false) // ハイドレーション対策
-    const [open, setOpen] = useState(false) // モバイルメニュー開閉
-    const [openCat, setOpenCat] = useState(false) // カテゴリ開閉
-    const [openAbout, setOpenAbout] = useState(false) // サイトについて開閉
-    const menuRef = useRef<HTMLElement>(null) // メニュー要素参照
-    const triggerRef = useRef<HTMLButtonElement>(null) // トグルボタン参照
+    const [mounted, setMounted] = useState(false)
+    const [open, setOpen] = useState(false)
+    const [openCat, setOpenCat] = useState(false)
+    const [openAbout, setOpenAbout] = useState(false)
+    const [navClosing, setNavClosing] = useState(false)
+    const menuRef = useRef<HTMLElement>(null)
+    const triggerRef = useRef<HTMLButtonElement>(null)
+    const pathname = usePathname()
 
     useEffect(() => {
-        setMounted(true) // クライアントマウント後にtrue
+        setMounted(true)
     }, [])
 
     useEffect(() => {
-        const menu = menuRef.current // inert/aria-hidden制御対象
+        const menu = menuRef.current
         if (!menu) return
         if (open) {
-            menu.removeAttribute('inert') // 開く時はフォーカス可能に
-            menu.setAttribute('aria-hidden', 'false') // SRに可視
-            const first = menu.querySelector<HTMLElement>('a,button,[tabindex]:not([tabindex="-1"])') // 初期フォーカス先
-            first?.focus() // メニューオープン時に内部へフォーカス移動
-            document.body.style.overflow = 'hidden' // 背景スクロール固定
+            menu.removeAttribute('inert')
+            menu.setAttribute('aria-hidden', 'false')
+            const first = menu.querySelector<HTMLElement>('a,button,[tabindex]:not([tabindex="-1"])')
+            first?.focus()
+            document.body.style.overflow = 'hidden'
         } else {
-            // 閉じる前に内部フォーカスを外す
             if (menu.contains(document.activeElement)) {
                 ;(document.activeElement as HTMLElement | null)?.blur()
             }
-            menu.setAttribute('inert', '') // 閉じている間はフォーカス不能
-            menu.setAttribute('aria-hidden', 'true') // SRにも非表示
-            triggerRef.current?.focus() // フォーカスをトグルボタンへ返す
-            document.body.style.overflow = '' // 背景スクロール解除
+            menu.setAttribute('inert', '')
+            menu.setAttribute('aria-hidden', 'true')
+            triggerRef.current?.focus()
+            document.body.style.overflow = ''
         }
         return () => {
-            document.body.style.overflow = '' // クリーンアップ
+            document.body.style.overflow = ''
         }
     }, [open])
 
     const closeAll = () => {
-        setOpen(false) // メニューを閉じる
-        setOpenCat(false) // カテゴリ閉
-        setOpenAbout(false) // サイトについて閉
+        setOpen(false)
+        setOpenCat(false)
+        setOpenAbout(false)
     }
+
+    const handleDesktopLinkClick = () => {
+        setNavClosing(true)
+    }
+
+    useEffect(() => {
+        if (!mounted) return
+        setNavClosing(false)
+        closeAll()
+    }, [pathname, mounted])
 
     return (
         <nav className="px-4">
-            {/* スマホ〜タブレット用トップバー（横並び） */}
             <div className="lg:hidden flex items-center justify-between h-14">
-                {/* クリック範囲をテキスト幅に限定するため、外側はレイアウト用のdiv、Linkはinline-blockにする */}
                 <div className="min-w-0 flex-1 pr-2 flex items-center">
                     <Link href="/" className="inline-block max-w-full h-full">
                         <span className="inline-flex items-center h-full text-lg font-semibold leading-none truncate">
@@ -84,7 +92,6 @@ export default function HeaderNav({ categories }: Props) {
                 </button>
             </div>
 
-            {/* PCナビ（高さ統一で縦ズレ解消） */}
             <ul className="hidden lg:flex items-center justify-center space-x-8 text-base h-12">
                 <li>
                     <Link href="/" className="flex items-center h-12 px-4 hover:text-gray-300">
@@ -93,16 +100,25 @@ export default function HeaderNav({ categories }: Props) {
                 </li>
 
                 <li className="relative group">
-                    <Link href="/post" className="flex items-center h-12 px-4 hover:text-gray-300 gap-1">
+                    <Link
+                        href="/post"
+                        className="flex items-center h-12 px-4 hover:text-gray-300 gap-1"
+                        onClick={handleDesktopLinkClick}
+                    >
                         ブログ
                         {mounted ? <Icon icon="mdi:chevron-down" width="18" height="18" /> : null}
                     </Link>
-                    <ul className="absolute left-0 top-full hidden min-w-max bg-gray-800 shadow-lg z-20 group-hover:block hover:block space-y-1">
+                    <ul
+                        className={`absolute left-0 top-full min-w-max bg-gray-800 shadow-lg z-20 space-y-1 ${
+                            navClosing ? '!hidden' : 'hidden group-hover:block hover:block'
+                        }`}
+                    >
                         {categories.map((cat) => (
                             <li key={cat.slug}>
                                 <Link
                                     href={`/post/${cat.slug}`}
                                     className="block whitespace-nowrap px-6 py-3 text-base hover:bg-gray-700"
+                                    onClick={handleDesktopLinkClick}
                                 >
                                     {cat.displayName}
                                 </Link>
@@ -112,11 +128,19 @@ export default function HeaderNav({ categories }: Props) {
                 </li>
 
                 <li className="relative group">
-                    <Link href="/about" className="flex items-center h-12 px-4 hover:text-gray-300 gap-1">
+                    <Link
+                        href="/about"
+                        className="flex items-center h-12 px-4 hover:text-gray-300 gap-1"
+                        onClick={handleDesktopLinkClick}
+                    >
                         サイトについて
                         {mounted ? <Icon icon="mdi:chevron-down" width="18" height="18" /> : null}
                     </Link>
-                    <ul className="absolute left-0 top-full hidden min-w-max bg-gray-800 shadow-lg z-20 group-hover:block hover:block space-y-1">
+                    <ul
+                        className={`absolute left-0 top-full min-w-max bg-gray-800 shadow-lg z-20 space-y-1 ${
+                            navClosing ? '!hidden' : 'hidden group-hover:block hover:block'
+                        }`}
+                    >
                         {[
                             { label: '運営者について', href: '/charge-of-this-site' },
                             { label: 'サイトマップ', href: '/site-map' },
@@ -126,6 +150,7 @@ export default function HeaderNav({ categories }: Props) {
                                 <Link
                                     href={link.href}
                                     className="block whitespace-nowrap px-6 py-3 text-base hover:bg-gray-700"
+                                    onClick={handleDesktopLinkClick}
                                 >
                                     {link.label}
                                 </Link>
@@ -141,7 +166,6 @@ export default function HeaderNav({ categories }: Props) {
                 </li>
             </ul>
 
-            {/* モバイルメニュー（ポータルでbody直下に出して全画面の黒背景にする） */}
             {mounted
                 ? createPortal(
                       <>
@@ -157,8 +181,8 @@ export default function HeaderNav({ categories }: Props) {
                               className={`fixed top-0 left-0 z-50 h-screen w-4/5 max-w-sm bg-gray-900 text-white shadow-xl transition-transform duration-200 ${
                                   open ? 'translate-x-0' : '-translate-x-full'
                               }`}
-                              role="dialog" // モーダル的意味付け
-                              aria-modal="true" // 背景はモーダル外
+                              role="dialog"
+                              aria-modal="true"
                           >
                               <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
                                   <span className="text-lg font-semibold">メニュー</span>
@@ -195,9 +219,7 @@ export default function HeaderNav({ categories }: Props) {
                                       />
                                   </button>
                                   <div
-                                      className={`${
-                                          openCat ? 'max-h-96' : 'max-h-0'
-                                      } overflow-hidden transition-[max-height] duration-200`}
+                                      className={`${openCat ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-[max-height] duration-200`}
                                   >
                                       <div className="pl-3">
                                           <Link
@@ -234,9 +256,7 @@ export default function HeaderNav({ categories }: Props) {
                                       />
                                   </button>
                                   <div
-                                      className={`${
-                                          openAbout ? 'max-h-96' : 'max-h-0'
-                                      } overflow-hidden transition-[max-height] duration-200`}
+                                      className={`${openAbout ? 'max-h-96' : 'max-h-0'} overflow-hidden transition-[max-height] duration-200`}
                                   >
                                       <div className="pl-3">
                                           {[
