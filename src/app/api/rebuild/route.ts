@@ -182,12 +182,13 @@ async function runRestart(
     pm2CmdAbs: string,
     appName: string,
     cwd: string,
-    write: (block: string) => void
+    write: (block: string) => void,
+    env?: NodeJS.ProcessEnv
 ): Promise<boolean> {
     const nodeBinDir = path.dirname(pm2CmdAbs)
     const nodeAbs = path.join(nodeBinDir, 'node')
     try {
-        fs.accessSync(nodeAbs, fs.constants.X_OK) // pm2 と同じ bin に node がある前提を検証
+        fs.accessSync(nodeAbs, fs.constants.X_OK)
     } catch {
         let block = `${formatJstTimestamp()} ${name}:NG\n\n`
         block += `\tspawn error:\n`
@@ -198,14 +199,19 @@ async function runRestart(
         return false
     }
 
-    const env = buildEnvForPm2(pm2CmdAbs)
+    const mergedEnv = { ...buildEnvForPm2(pm2CmdAbs), ...env }
 
-    env.LOG_DIR = '/home/koeda_pi/Desktop/saechanblog/log/access'
-
-    const okRestart = await runStep(`${name}-restart`, pm2CmdAbs, ['restart', appName, '--update-env'], cwd, write, env)
+    const okRestart = await runStep(
+        `${name}-restart`,
+        pm2CmdAbs,
+        ['restart', appName, '--update-env'],
+        cwd,
+        write,
+        mergedEnv
+    )
     if (!okRestart) return false
 
-    const okLs = await runStep(`${name}-ls`, pm2CmdAbs, ['ls'], cwd, write, env)
+    const okLs = await runStep(`${name}-ls`, pm2CmdAbs, ['ls'], cwd, write, mergedEnv)
     return okRestart && okLs
 }
 
@@ -218,15 +224,21 @@ async function runUpdateProcess(write: (block: string) => void, logFile: string)
     ]
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
+
+    const env: NodeJS.ProcessEnv = {
+        ...process.env,
+        LOG_DIR: '/home/koeda_pi/Desktop/saechanblog/log/access',
+    }
+
     let success = true
     for (const [name, cmd, args] of steps) {
         if (!success) break
-        success = await runStep(name, cmd, args, cwd, write)
+        success = await runStep(name, cmd, args, cwd, write, env)
     }
 
     if (success) {
         const pm2Cmd = resolvePm2Absolute(write)
-        if (pm2Cmd) success = await runRestart('restart', pm2Cmd, 'saechanblog', cwd, write)
+        if (pm2Cmd) success = await runRestart('restart', pm2Cmd, 'saechanblog', cwd, write, env)
         else success = false
     }
 
