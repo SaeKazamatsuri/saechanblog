@@ -80,7 +80,13 @@ export async function POST(req: NextRequest) {
         const method = sanitize(b.method)
 
         const projectRoot = await resolveProjectRoot()
-        const logDir = path.join(projectRoot, 'log', 'access')
+        const envLogDir =
+            process.env.LOG_DIR && process.env.LOG_DIR.trim() !== '' ? process.env.LOG_DIR.trim() : undefined
+        const logDir = envLogDir
+            ? path.isAbsolute(envLogDir)
+                ? envLogDir
+                : path.join(projectRoot, envLogDir)
+            : path.join(projectRoot, 'log', 'access')
         await fs.mkdir(logDir, { recursive: true })
 
         const today = getTodayJst()
