@@ -143,7 +143,6 @@ async function sendAccessLog(
         method: string
     }
 ) {
-    console.log(payload)
     return await fetch(`${origin}/api/log`, {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -160,6 +159,8 @@ export async function middleware(req: NextRequest) {
     const method = req.method
     const isoTime = new Date().toISOString()
     let redirectToForLog: string | undefined
+
+    console.log(origin)
 
     if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
         const status = 403
@@ -281,7 +282,9 @@ export async function middleware(req: NextRequest) {
                 redirectTo: redirectToForLog,
                 userAgent,
                 method,
-            }).catch(() => {})
+            }).catch((e) => {
+                console.error(e)
+            })
         }
     }
 
