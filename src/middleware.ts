@@ -143,6 +143,7 @@ async function sendAccessLog(
         method: string
     }
 ) {
+    console.log(payload)
     return await fetch(`${origin}/api/log`, {
         method: 'POST',
         body: JSON.stringify(payload),
