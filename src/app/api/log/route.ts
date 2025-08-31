@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
                       cwd: process.cwd(),
                   }
 
-        console.log(devPayload)
+        process.stdout.write(JSON.stringify(devPayload) + '\n')
 
         return NextResponse.json(devPayload, { status: 200 })
     } catch (e: unknown) {
