@@ -155,7 +155,7 @@ export async function middleware(req: NextRequest) {
     const now = Date.now()
     const ip = getClientIp(req)
     const url = req.nextUrl.pathname
-    const origin = req.nextUrl.origin
+    const origin = process.env.NEXT_PUBLIC_APP_ORIGIN ?? req.nextUrl.origin
     const userAgent = req.headers.get('user-agent') ?? ''
     const method = req.method
     const isoTime = new Date().toISOString()

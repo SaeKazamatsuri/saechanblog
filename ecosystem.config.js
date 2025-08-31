@@ -8,6 +8,7 @@ module.exports = {
             env: {
                 NODE_ENV: 'production',
                 LOG_DIR: '/home/koeda_pi/Desktop/saechanblog/log/access',
+                NEXT_PUBLIC_APP_ORIGIN: 'https://sae-chan.net/',
             },
         },
     ],
