@@ -41,7 +41,8 @@ const blockedPaths = [
     'scripts/nodemailer.js',
 ]
 
-const IGNORE_PREFIXES = ['/image']
+const IGNORE_PREFIXES = ['/image', '/api', '/admin']
+
 const IGNORE_EXTENSIONS = [
     '.png',
     '.jpg',

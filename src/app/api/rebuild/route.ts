@@ -225,20 +225,15 @@ async function runUpdateProcess(write: (block: string) => void, logFile: string)
 
     const cwd = '/home/koeda_pi/Desktop/saechanblog'
 
-    const env: NodeJS.ProcessEnv = {
-        ...process.env,
-        LOG_DIR: '/home/koeda_pi/Desktop/saechanblog/log/access',
-    }
-
     let success = true
     for (const [name, cmd, args] of steps) {
         if (!success) break
-        success = await runStep(name, cmd, args, cwd, write, env)
+        success = await runStep(name, cmd, args, cwd, write)
     }
 
     if (success) {
         const pm2Cmd = resolvePm2Absolute(write)
-        if (pm2Cmd) success = await runRestart('restart', pm2Cmd, 'saechanblog', cwd, write, env)
+        if (pm2Cmd) success = await runRestart('restart', pm2Cmd, 'saechanblog', cwd, write)
         else success = false
     }
 

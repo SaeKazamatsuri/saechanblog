@@ -127,6 +127,9 @@ export async function POST(req: NextRequest) {
                       logFile: path.join(resolveLogDir(), `${getTodayJst()}.csv`),
                       cwd: process.cwd(),
                   }
+
+        console.log(devPayload)
+
         return NextResponse.json(devPayload, { status: 200 })
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e)
