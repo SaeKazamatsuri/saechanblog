@@ -129,10 +129,12 @@ export async function POST(req: NextRequest) {
                   }
 
         process.stdout.write(JSON.stringify(devPayload) + '\n')
+        process.stdout.write(resolveLogDir())
 
         return NextResponse.json(devPayload, { status: 200 })
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e)
+        process.stdout.write(`Error during CSV write: ${msg}`)
         try {
             const fallback = '/tmp/saechanblog_access_error.log'
             const stamp = new Date().toISOString()

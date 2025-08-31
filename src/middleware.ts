@@ -147,7 +147,6 @@ async function sendAccessLog(
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
-        keepalive: true,
     })
 }
 
@@ -165,7 +164,7 @@ export async function middleware(req: NextRequest) {
         const status = 403
         const sig = makeSig(ip, method, url, status)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
@@ -183,7 +182,7 @@ export async function middleware(req: NextRequest) {
         const status = 403
         const sig = makeSig(ip, method, url, status)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
@@ -204,7 +203,7 @@ export async function middleware(req: NextRequest) {
                 const status = 429
                 const sig = makeSig(ip, method, url, status)
                 if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                    void sendAccessLog(origin, {
+                    await sendAccessLog(origin, {
                         ip,
                         url,
                         time: isoTime,
@@ -231,7 +230,7 @@ export async function middleware(req: NextRequest) {
             const status = 302
             const sig = makeSig(ip, method, url, status)
             if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                void sendAccessLog(origin, {
+                await sendAccessLog(origin, {
                     ip,
                     url,
                     time: isoTime,
@@ -255,7 +254,7 @@ export async function middleware(req: NextRequest) {
             const status = 302
             const sig = makeSig(ip, method, url, status, redirectToForLog)
             if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-                void sendAccessLog(origin, {
+                await sendAccessLog(origin, {
                     ip,
                     url,
                     time: isoTime,
@@ -273,7 +272,7 @@ export async function middleware(req: NextRequest) {
         const status = 200
         const sig = makeSig(ip, method, url, status, redirectToForLog)
         if (!shouldIgnorePath(url) && !shouldSkipByDedupe(sig, now)) {
-            void sendAccessLog(origin, {
+            await sendAccessLog(origin, {
                 ip,
                 url,
                 time: isoTime,
