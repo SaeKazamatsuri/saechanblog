@@ -160,8 +160,6 @@ export async function middleware(req: NextRequest) {
     const isoTime = new Date().toISOString()
     let redirectToForLog: string | undefined
 
-    console.log(origin)
-
     if (url.toLowerCase().endsWith('.php') || url.toLowerCase().includes('.php/')) {
         const status = 403
         const sig = makeSig(ip, method, url, status)

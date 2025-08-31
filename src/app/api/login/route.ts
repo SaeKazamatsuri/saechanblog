@@ -33,8 +33,6 @@ async function readPassword(req: NextRequest): Promise<string | null> {
 
 // POST /api/login
 export async function POST(req: NextRequest) {
-    //console.log(ADMIN_HASH)
-
     if (!ADMIN_HASH) {
         return NextResponse.json({ error: 'Server misconfigured: ADMIN_HASH missing' }, { status: 500 })
     }
